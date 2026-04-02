@@ -53,9 +53,9 @@ public class SchemaState
     {
         if (!CanRedo) return;
 
-        var (action, inverse) = _redoStack.Pop();
-        Document = action.Apply(Document);
-        _undoStack.Push((action, inverse));
+        var (inverse, forward) = _redoStack.Pop();
+        Document = forward.Apply(Document);
+        _undoStack.Push((forward, inverse));
         OnChange?.Invoke();
     }
 
@@ -63,7 +63,7 @@ public class SchemaState
     {
         var items = _undoStack.ToArray();
         _undoStack.Clear();
-        for (int i = 0; i < MaxUndoDepth; i++)
+        for (int i = MaxUndoDepth - 1; i >= 0; i--)
             _undoStack.Push(items[i]);
     }
 }
