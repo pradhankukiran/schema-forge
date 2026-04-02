@@ -10,10 +10,10 @@
         <input type="text" placeholder="Search tables..." @bind="_searchTerm" @bind:event="oninput" class="sf-input" />
     </div>
 
-    <div class="sf-explorer-tree">
+    <div class="sf-explorer-tree" role="tree">
         @foreach (var table in FilteredTables)
         {
-            <div class="sf-tree-item @(table.Id == SelectedTableId ? "selected" : "")"
+            <div @key="table.Id" class="sf-tree-item @(table.Id == SelectedTableId ? "selected" : "")" role="treeitem"
                  @onclick="() => OnTableClick.InvokeAsync(table.Id)">
                 <span class="sf-tree-icon" style="color: @table.AccentColor;">T</span>
                 <span class="sf-tree-label">@table.Name</span>
@@ -24,7 +24,7 @@
             {
                 @foreach (var col in table.Columns)
                 {
-                    <div class="sf-tree-item sf-tree-child">
+                    <div @key="col.Id" class="sf-tree-item sf-tree-child" role="treeitem">
                         @if (col.IsPrimaryKey)
                         {
                             <span class="sf-tree-icon" style="color: #EF6C00;">K</span>
