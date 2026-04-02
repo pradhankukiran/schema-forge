@@ -6,7 +6,7 @@
 <footer class="sf-statusbar">
     <div class="sf-statusbar-left">
         <span class="sf-status-dot"></span>
-        <span>SQLite Ready</span>
+        <span>@SchemaState.Document.TargetDialect Ready</span>
         <span class="sf-sep">|</span>
         <span class="@(AutoSave.SaveStatus == "Saved" ? "" : "sf-unsaved")">@AutoSave.SaveStatus</span>
     </div>
@@ -23,14 +23,19 @@
 </footer>
 
 @code {
+    private Action<string>? _onSaveStatusChanged;
+
     protected override void OnInitialized()
     {
         SchemaState.OnChange += StateHasChanged;
-        AutoSave.OnSaveStatusChanged += _ => InvokeAsync(StateHasChanged);
+        _onSaveStatusChanged = _ => InvokeAsync(StateHasChanged);
+        AutoSave.OnSaveStatusChanged += _onSaveStatusChanged;
     }
 
     public void Dispose()
     {
         SchemaState.OnChange -= StateHasChanged;
+        if (_onSaveStatusChanged != null)
+            AutoSave.OnSaveStatusChanged -= _onSaveStatusChanged;
     }
 }

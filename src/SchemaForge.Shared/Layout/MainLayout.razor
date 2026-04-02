@@ -38,25 +38,32 @@
 
     private async void HandleShortcut(string shortcut)
     {
-        switch (shortcut)
+        try
         {
-            case "Ctrl+1":
-                _isDesignMode = true;
-                await InvokeAsync(StateHasChanged);
-                break;
-            case "Ctrl+2":
-                _isDesignMode = false;
-                await InvokeAsync(StateHasChanged);
-                break;
-            case "Ctrl+S":
-                await AutoSave.SaveNowAsync();
-                break;
-            case "Ctrl+Z":
-                SchemaState.Undo();
-                break;
-            case "Ctrl+Y":
-                SchemaState.Redo();
-                break;
+            switch (shortcut)
+            {
+                case "Ctrl+1":
+                    _isDesignMode = true;
+                    await InvokeAsync(StateHasChanged);
+                    break;
+                case "Ctrl+2":
+                    _isDesignMode = false;
+                    await InvokeAsync(StateHasChanged);
+                    break;
+                case "Ctrl+S":
+                    await AutoSave.SaveNowAsync();
+                    break;
+                case "Ctrl+Z":
+                    SchemaState.Undo();
+                    break;
+                case "Ctrl+Y":
+                    SchemaState.Redo();
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+            // Swallow JS interop exceptions during shortcuts
         }
     }
 

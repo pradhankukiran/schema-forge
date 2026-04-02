@@ -1110,3 +1110,12 @@ html, body {
     max-width: 400px;
     text-align: center;
 }
+
+/* Results Action Bar */
+.sf-results-action-bar {
+    display: flex;
+    gap: 8px;
+    padding: 6px 12px;
+    border-bottom: 1px solid #D9D9D9;
+    background: #F5F5F5;
+}

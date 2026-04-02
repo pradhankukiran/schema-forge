@@ -8,6 +8,9 @@ public class SqlServerDdlGenerator : IDdlGeneratorService
 {
     public SqlDialect Dialect => SqlDialect.SqlServer;
 
+    private static string QuoteId(string name) => $"[{name.Replace("]", "]]")}]";
+
+
     public string GenerateFullDdl(SchemaDocument schema)
     {
         var sb = new StringBuilder();
@@ -50,7 +53,7 @@ public class SqlServerDdlGenerator : IDdlGeneratorService
     public string GenerateCreateTable(TableDefinition table, SchemaDocument schema)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"CREATE TABLE [{table.Name}] (");
+        sb.AppendLine($"CREATE TABLE {QuoteId(table.Name)} (");
 
         var lines = new List<string>();
 
