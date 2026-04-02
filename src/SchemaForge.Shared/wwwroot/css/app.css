@@ -786,3 +786,129 @@ html, body {
     align-items: center;
     gap: 4px;
 }
+
+/* Home Page */
+.sf-home {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 48px 24px;
+}
+
+.sf-home-header {
+    margin-bottom: 40px;
+}
+
+.sf-home-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--sf-primary);
+    margin-bottom: 4px;
+}
+
+.sf-home-subtitle {
+    font-size: 14px;
+    color: var(--sf-text-light);
+}
+
+.sf-home-content {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.sf-home-section .sf-section-header {
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--sf-text-light);
+}
+
+.sf-btn-primary {
+    background: var(--sf-primary);
+    color: var(--sf-white);
+    border-color: var(--sf-primary);
+}
+
+.sf-btn-primary:hover {
+    background: #164d82;
+    border-color: #164d82;
+}
+
+.sf-btn-lg {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+.sf-sample-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.sf-sample-card {
+    padding: 16px;
+    border: 1px solid var(--sf-border);
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.sf-sample-card:hover {
+    border-color: var(--sf-primary);
+}
+
+.sf-sample-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sf-text);
+    margin-bottom: 4px;
+}
+
+.sf-sample-desc {
+    font-size: 12px;
+    color: var(--sf-text-light);
+    margin-bottom: 8px;
+}
+
+.sf-sample-meta {
+    font-size: 11px;
+    color: var(--sf-text-light);
+}
+
+.sf-recent-list {
+    border: 1px solid var(--sf-border);
+}
+
+.sf-recent-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid #F0F0F0;
+    cursor: pointer;
+}
+
+.sf-recent-item:last-child {
+    border-bottom: none;
+}
+
+.sf-recent-item:hover {
+    background: var(--sf-surface);
+}
+
+.sf-recent-info {
+    flex: 1;
+}
+
+.sf-recent-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sf-text);
+}
+
+.sf-recent-meta {
+    font-size: 11px;
+    color: var(--sf-text-light);
+    margin-top: 2px;
+}
