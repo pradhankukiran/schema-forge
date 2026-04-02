@@ -1,0 +1,11 @@
+<div class="sf-loading">
+    <div class="sf-loading-spinner"></div>
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <div class="sf-loading-message">@Message</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Message { get; set; }
+}
