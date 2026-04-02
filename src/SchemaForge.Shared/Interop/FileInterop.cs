@@ -23,6 +23,17 @@ public class FileInterop : IAsyncDisposable
         await DownloadTextAsync(filename, sql, "application/sql");
     }
 
+    public async Task CopyToClipboardAsync(string text)
+    {
+        var module = await _moduleTask.Value;
+        await module.InvokeAsync<bool>("copyToClipboard", text);
+    }
+
+    public async Task DownloadCsvAsync(string filename, string csvContent)
+    {
+        await DownloadTextAsync(filename, csvContent, "text/csv");
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_moduleTask.IsValueCreated)
