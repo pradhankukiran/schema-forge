@@ -1,0 +1,129 @@
+@using SchemaForge.Core.Models
+@using Microsoft.AspNetCore.Components
+
+<g class="sf-table-node @(IsSelected ? "selected" : "")"
+   transform="translate(@Table.Position.X, @Table.Position.Y)">
+
+    @* Table background *@
+    <rect class="sf-table-bg"
+          width="@Table.Position.Width"
+          height="@TableHeight"
+          fill="white"
+          stroke="@(IsSelected ? "#1B5E9E" : "#D9D9D9")"
+          stroke-width="@(IsSelected ? "2" : "1")" />
+
+    @* Accent bar *@
+    <rect width="@Table.Position.Width" height="4" fill="@Table.AccentColor" />
+
+    @* Table header *@
+    <rect class="sf-table-header"
+          y="4"
+          width="@Table.Position.Width"
+          height="28"
+          fill="#F5F5F5"
+          stroke="#D9D9D9"
+          stroke-width="0 0 1 0"
+          @onmousedown="OnHeaderMouseDown"
+          @onmousedown:stopPropagation="true"
+          style="cursor: grab;" />
+
+    @* Table name label *@
+    @((MarkupString)$@"<text x=""12"" y=""24"" class=""sf-table-name"" font-size=""13"" font-weight=""600"" fill=""#4A4A4A"" style=""cursor:pointer;"">{Table.Name}</text>")
+
+    @* Column count badge *@
+    @((MarkupString)$@"<text x=""{Table.Position.Width - 12}"" y=""24"" font-size=""10"" fill=""#999"" text-anchor=""end"">{Table.Columns.Count}</text>")
+
+    @* Columns *@
+    @if (!Table.IsCollapsed)
+    {
+        var yOffset = 36;
+        @foreach (var col in Table.Columns)
+        {
+            var colY = yOffset;
+            <g class="sf-column-row" transform="translate(0, @colY)">
+                @* Connection port (left) *@
+                <circle class="sf-port"
+                        cx="0" cy="10"
+                        r="4"
+                        fill="white"
+                        stroke="#D9D9D9"
+                        @onmousedown="() => OnPortDragStart(col, 0, colY + 10)"
+                        @onmousedown:stopPropagation="true"
+                        @onmouseup="() => OnPortDrop(col)"
+                        @onmouseup:stopPropagation="true"
+                        style="cursor: crosshair;" />
+
+                @* PK icon *@
+                @if (col.IsPrimaryKey)
+                {
+                    @((MarkupString)@"<text x=""10"" y=""14"" font-size=""10"" fill=""#EF6C00"">PK</text>")
+                }
+
+                @* Column name *@
+                @{
+                    var nameX = col.IsPrimaryKey ? 28 : 12;
+                    var typeX = Table.Position.Width - 12;
+                    var typeName = col.DataType.ToString().ToLowerInvariant();
+                }
+                @((MarkupString)$@"<text x=""{nameX}"" y=""14"" font-size=""12"" fill=""#4A4A4A"">{col.Name}</text>")
+
+                @* Data type *@
+                @((MarkupString)$@"<text x=""{typeX}"" y=""14"" font-size=""11"" fill=""#999"" text-anchor=""end"">{typeName}</text>")
+
+                @* Connection port (right) *@
+                <circle class="sf-port"
+                        cx="@Table.Position.Width" cy="10"
+                        r="4"
+                        fill="white"
+                        stroke="#D9D9D9"
+                        @onmousedown="() => OnPortDragStart(col, Table.Position.Width, colY + 10)"
+                        @onmousedown:stopPropagation="true"
+                        @onmouseup="() => OnPortDrop(col)"
+                        @onmouseup:stopPropagation="true"
+                        style="cursor: crosshair;" />
+
+                <line x1="0" y1="20" x2="@Table.Position.Width" y2="20" stroke="#F0F0F0" stroke-width="0.5" />
+            </g>
+            yOffset += ColumnRowHeight;
+        }
+    }
+</g>
+
+@code {
+    private const int ColumnRowHeight = 24;
+    private const int HeaderHeight = 36;
+
+    [Parameter, EditorRequired] public TableDefinition Table { get; set; } = default!;
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+    [Parameter] public EventCallback<TableDragEventArgs> OnStartDrag { get; set; }
+    [Parameter] public EventCallback<RelationshipDrawEventArgs> OnStartRelationship { get; set; }
+    [Parameter] public EventCallback<RelationshipDropEventArgs> OnDropRelationship { get; set; }
+
+    private int TableHeight => Table.IsCollapsed
+        ? HeaderHeight
+        : HeaderHeight + (Table.Columns.Count * ColumnRowHeight) + 4;
+
+    private void OnHeaderMouseDown(MouseEventArgs e)
+    {
+        if (e.Button == 0)
+        {
+            OnSelect.InvokeAsync(Table.Id);
+            OnStartDrag.InvokeAsync(new TableDragEventArgs(Table.Id, e.ClientX, e.ClientY));
+        }
+    }
+
+    private void OnPortDragStart(ColumnDefinition col, double portX, double portY)
+    {
+        OnStartRelationship.InvokeAsync(new RelationshipDrawEventArgs(
+            Table.Id,
+            col.Id,
+            Table.Position.X + portX,
+            Table.Position.Y + portY));
+    }
+
+    private void OnPortDrop(ColumnDefinition col)
+    {
+        OnDropRelationship.InvokeAsync(new RelationshipDropEventArgs(Table.Id, col.Id));
+    }
+}

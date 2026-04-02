@@ -1,0 +1,281 @@
+@inject SchemaState SchemaState
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="sf-canvas-container" @ref="_containerRef">
+    <div class="sf-canvas-toolbar">
+        <button class="sf-btn sf-btn-sm" @onclick="AddTable" title="Add Table (Ctrl+T)">+ Table</button>
+        <span class="sf-toolbar-sep"></span>
+        <button class="sf-btn sf-btn-sm" @onclick="ZoomOut" title="Zoom Out">-</button>
+        <span class="sf-zoom-label">@((int)(_zoom * 100))%</span>
+        <button class="sf-btn sf-btn-sm" @onclick="ZoomIn" title="Zoom In">+</button>
+        <button class="sf-btn sf-btn-sm" @onclick="ZoomFit" title="Fit All">Fit</button>
+        <span class="sf-toolbar-sep"></span>
+        <button class="sf-btn sf-btn-sm" @onclick="() => SchemaState.Undo()" disabled="@(!SchemaState.CanUndo)" title="Undo">Undo</button>
+        <button class="sf-btn sf-btn-sm" @onclick="() => SchemaState.Redo()" disabled="@(!SchemaState.CanRedo)" title="Redo">Redo</button>
+    </div>
+
+    <svg class="sf-canvas"
+         viewBox="@ViewBox"
+         @onmousedown="OnMouseDown"
+         @onmousemove="OnMouseMove"
+         @onmouseup="OnMouseUp"
+         @onwheel="OnWheel"
+         @oncontextmenu:preventDefault="true">
+
+        @if (SchemaState.Document.Canvas.ShowGrid)
+        {
+            <defs>
+                <pattern id="grid" width="@GridSize" height="@GridSize" patternUnits="userSpaceOnUse">
+                    <path d="M @GridSize 0 L 0 0 0 @GridSize" fill="none" stroke="#E8E8E8" stroke-width="0.5" />
+                </pattern>
+            </defs>
+            <rect x="@(_panX - 5000)" y="@(_panY - 5000)" width="10000" height="10000" fill="url(#grid)" />
+        }
+
+        @* Relationship lines *@
+        @foreach (var rel in SchemaState.Document.Relationships)
+        {
+            <RelationshipLine @key="rel.Id" Relationship="rel" Schema="SchemaState.Document" />
+        }
+
+        @* Drawing line while creating relationship *@
+        @if (_isDrawingRelationship)
+        {
+            <line x1="@_drawLineStartX" y1="@_drawLineStartY"
+                  x2="@_drawLineEndX" y2="@_drawLineEndY"
+                  stroke="#1B5E9E" stroke-width="2" stroke-dasharray="6,3" />
+        }
+
+        @* Table nodes *@
+        @foreach (var table in SchemaState.Document.Tables)
+        {
+            <TableNode @key="table.Id"
+                       Table="table"
+                       IsSelected="@(_selectedTableId == table.Id)"
+                       OnSelect="SelectTable"
+                       OnStartDrag="StartDrag"
+                       OnStartRelationship="StartRelationship"
+                       OnDropRelationship="DropRelationship" />
+        }
+    </svg>
+</div>
+
+@code {
+    [Parameter] public EventCallback<TableDefinition> OnTableSelected { get; set; }
+
+    private ElementReference _containerRef;
+    private string? _selectedTableId;
+    private double _zoom = 1.0;
+    private double _panX;
+    private double _panY;
+    private int GridSize => SchemaState.Document.Canvas.GridSize;
+
+    // Drag state
+    private bool _isDragging;
+    private string? _dragTableId;
+    private double _dragStartX, _dragStartY;
+    private double _dragTableStartX, _dragTableStartY;
+
+    // Pan state
+    private bool _isPanning;
+    private double _panStartX, _panStartY;
+    private double _panStartViewX, _panStartViewY;
+
+    // Relationship drawing state
+    private bool _isDrawingRelationship;
+    private string? _drawSourceTableId;
+    private string? _drawSourceColumnId;
+    private double _drawLineStartX, _drawLineStartY;
+    private double _drawLineEndX, _drawLineEndY;
+
+    private string ViewBox => $"{_panX} {_panY} {960 / _zoom} {600 / _zoom}";
+
+    protected override void OnInitialized()
+    {
+        SchemaState.OnChange += StateHasChanged;
+    }
+
+    private void AddTable()
+    {
+        var tableCount = SchemaState.Document.Tables.Count;
+        var table = new TableDefinition
+        {
+            Name = $"table_{tableCount + 1}",
+            Position = new CanvasPosition
+            {
+                X = _panX + (480 / _zoom) - 120,
+                Y = _panY + (300 / _zoom) - 60
+            },
+            Columns =
+            [
+                new ColumnDefinition
+                {
+                    Name = "id",
+                    DataType = LogicalDataType.Integer,
+                    IsPrimaryKey = true,
+                    IsAutoIncrement = true,
+                    IsNullable = false,
+                    OrdinalPosition = 0
+                }
+            ]
+        };
+
+        SchemaState.Dispatch(new AddTableAction(table));
+    }
+
+    private async Task SelectTable(string tableId)
+    {
+        _selectedTableId = tableId;
+        var table = SchemaState.Document.Tables.FirstOrDefault(t => t.Id == tableId);
+        if (table != null)
+            await OnTableSelected.InvokeAsync(table);
+    }
+
+    private void StartDrag(TableDragEventArgs args)
+    {
+        _isDragging = true;
+        _dragTableId = args.TableId;
+        _dragStartX = args.ClientX;
+        _dragStartY = args.ClientY;
+        var table = SchemaState.Document.Tables.First(t => t.Id == args.TableId);
+        _dragTableStartX = table.Position.X;
+        _dragTableStartY = table.Position.Y;
+    }
+
+    private void StartRelationship(RelationshipDrawEventArgs args)
+    {
+        _isDrawingRelationship = true;
+        _drawSourceTableId = args.TableId;
+        _drawSourceColumnId = args.ColumnId;
+        _drawLineStartX = args.StartX;
+        _drawLineStartY = args.StartY;
+        _drawLineEndX = args.StartX;
+        _drawLineEndY = args.StartY;
+    }
+
+    private void DropRelationship(RelationshipDropEventArgs args)
+    {
+        if (!_isDrawingRelationship || _drawSourceTableId == null || _drawSourceColumnId == null)
+            return;
+
+        if (_drawSourceTableId != args.TableId)
+        {
+            var rel = new RelationshipDefinition
+            {
+                SourceTableId = _drawSourceTableId,
+                SourceColumnId = _drawSourceColumnId,
+                TargetTableId = args.TableId,
+                TargetColumnId = args.ColumnId,
+                Name = $"fk_{_drawSourceTableId[..8]}_{args.TableId[..8]}"
+            };
+            SchemaState.Dispatch(new AddRelationshipAction(rel));
+        }
+
+        _isDrawingRelationship = false;
+        _drawSourceTableId = null;
+        _drawSourceColumnId = null;
+    }
+
+    private void OnMouseDown(MouseEventArgs e)
+    {
+        if (e.Button == 1 || (e.Button == 0 && e.ShiftKey))
+        {
+            _isPanning = true;
+            _panStartX = e.ClientX;
+            _panStartY = e.ClientY;
+            _panStartViewX = _panX;
+            _panStartViewY = _panY;
+        }
+        else if (e.Button == 0 && !_isDragging)
+        {
+            _selectedTableId = null;
+        }
+    }
+
+    private void OnMouseMove(MouseEventArgs e)
+    {
+        if (_isPanning)
+        {
+            _panX = _panStartViewX - (e.ClientX - _panStartX) / _zoom;
+            _panY = _panStartViewY - (e.ClientY - _panStartY) / _zoom;
+        }
+        else if (_isDragging && _dragTableId != null)
+        {
+            var dx = (e.ClientX - _dragStartX) / _zoom;
+            var dy = (e.ClientY - _dragStartY) / _zoom;
+            var newX = SnapToGrid(_dragTableStartX + dx);
+            var newY = SnapToGrid(_dragTableStartY + dy);
+            SchemaState.Dispatch(new MoveTableAction(_dragTableId, newX, newY));
+        }
+        else if (_isDrawingRelationship)
+        {
+            // Approximate SVG coordinate from client coordinate
+            _drawLineEndX = _panX + e.OffsetX / _zoom;
+            _drawLineEndY = _panY + e.OffsetY / _zoom;
+        }
+    }
+
+    private void OnMouseUp(MouseEventArgs e)
+    {
+        if (_isDragging)
+        {
+            _isDragging = false;
+            _dragTableId = null;
+        }
+        if (_isPanning)
+        {
+            _isPanning = false;
+        }
+        if (_isDrawingRelationship)
+        {
+            _isDrawingRelationship = false;
+            _drawSourceTableId = null;
+            _drawSourceColumnId = null;
+        }
+    }
+
+    private void OnWheel(WheelEventArgs e)
+    {
+        var delta = e.DeltaY > 0 ? 0.9 : 1.1;
+        _zoom = Math.Clamp(_zoom * delta, 0.25, 4.0);
+    }
+
+    private void ZoomIn() => _zoom = Math.Min(_zoom * 1.2, 4.0);
+    private void ZoomOut() => _zoom = Math.Max(_zoom * 0.8, 0.25);
+
+    private void ZoomFit()
+    {
+        if (SchemaState.Document.Tables.Count == 0)
+        {
+            _panX = 0;
+            _panY = 0;
+            _zoom = 1.0;
+            return;
+        }
+
+        var minX = SchemaState.Document.Tables.Min(t => t.Position.X) - 50;
+        var minY = SchemaState.Document.Tables.Min(t => t.Position.Y) - 50;
+        var maxX = SchemaState.Document.Tables.Max(t => t.Position.X + t.Position.Width) + 50;
+        var maxY = SchemaState.Document.Tables.Max(t => t.Position.Y + 200) + 50;
+
+        var width = maxX - minX;
+        var height = maxY - minY;
+
+        _zoom = Math.Min(960.0 / width, 600.0 / height);
+        _zoom = Math.Clamp(_zoom, 0.25, 4.0);
+        _panX = minX;
+        _panY = minY;
+    }
+
+    private double SnapToGrid(double value)
+    {
+        var grid = (double)GridSize;
+        return Math.Round(value / grid) * grid;
+    }
+
+    public void Dispose()
+    {
+        SchemaState.OnChange -= StateHasChanged;
+    }
+}

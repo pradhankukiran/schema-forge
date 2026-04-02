@@ -1,0 +1,31 @@
+@inject SchemaState SchemaState
+@implements IDisposable
+
+<footer class="sf-statusbar">
+    <div class="sf-statusbar-left">
+        <span class="sf-status-dot"></span>
+        <span>SQLite Ready</span>
+    </div>
+    <div class="sf-statusbar-center">
+        <span>@SchemaState.Document.Tables.Count tables</span>
+        <span class="sf-sep">|</span>
+        <span>@SchemaState.Document.Tables.Sum(t => t.Columns.Count) columns</span>
+        <span class="sf-sep">|</span>
+        <span>@SchemaState.Document.Relationships.Count relationships</span>
+    </div>
+    <div class="sf-statusbar-right">
+        <span>@((int)(SchemaState.Document.Canvas.Zoom * 100))%</span>
+    </div>
+</footer>
+
+@code {
+    protected override void OnInitialized()
+    {
+        SchemaState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        SchemaState.OnChange -= StateHasChanged;
+    }
+}

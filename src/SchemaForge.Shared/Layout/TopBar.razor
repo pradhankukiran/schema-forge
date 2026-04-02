@@ -1,0 +1,31 @@
+@inject SchemaState SchemaState
+
+<header class="sf-topbar">
+    <div class="sf-topbar-left">
+        <span class="sf-logo">SchemaForge</span>
+    </div>
+    <div class="sf-topbar-center">
+        <button class="sf-mode-tab @(IsDesignMode ? "active" : "")" @onclick="() => SetMode(true)">
+            Design
+        </button>
+        <button class="sf-mode-tab @(!IsDesignMode ? "active" : "")" @onclick="() => SetMode(false)">
+            Query
+        </button>
+    </div>
+    <div class="sf-topbar-right">
+        <span class="sf-project-name">@SchemaState.Document.Name</span>
+        <button class="sf-btn" @onclick="OnExport">Export SQL</button>
+    </div>
+</header>
+
+@code {
+    [Parameter] public bool IsDesignMode { get; set; } = true;
+    [Parameter] public EventCallback<bool> IsDesignModeChanged { get; set; }
+    [Parameter] public EventCallback OnExport { get; set; }
+
+    private async Task SetMode(bool designMode)
+    {
+        IsDesignMode = designMode;
+        await IsDesignModeChanged.InvokeAsync(designMode);
+    }
+}

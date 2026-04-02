@@ -1,0 +1,68 @@
+@using SchemaForge.Core.Models
+
+@{
+    var (startX, startY, endX, endY) = CalculateEndpoints();
+}
+
+<g class="sf-relationship-line">
+    <line x1="@startX" y1="@startY" x2="@endX" y2="@endY"
+          stroke="#999" stroke-width="1.5" />
+
+    @* Crow's foot marker at target end *@
+    @{
+        var angle = Math.Atan2(endY - startY, endX - startX);
+        var markerLen = 10.0;
+    }
+    <line x1="@(endX - markerLen * Math.Cos(angle - 0.4))"
+          y1="@(endY - markerLen * Math.Sin(angle - 0.4))"
+          x2="@endX" y2="@endY"
+          stroke="#999" stroke-width="1.5" />
+    <line x1="@(endX - markerLen * Math.Cos(angle + 0.4))"
+          y1="@(endY - markerLen * Math.Sin(angle + 0.4))"
+          x2="@endX" y2="@endY"
+          stroke="#999" stroke-width="1.5" />
+</g>
+
+@code {
+    private const int HeaderHeight = 36;
+    private const int ColumnRowHeight = 24;
+
+    [Parameter, EditorRequired] public RelationshipDefinition Relationship { get; set; } = default!;
+    [Parameter, EditorRequired] public SchemaDocument Schema { get; set; } = default!;
+
+    private (double startX, double startY, double endX, double endY) CalculateEndpoints()
+    {
+        var sourceTable = Schema.Tables.FirstOrDefault(t => t.Id == Relationship.SourceTableId);
+        var targetTable = Schema.Tables.FirstOrDefault(t => t.Id == Relationship.TargetTableId);
+
+        if (sourceTable == null || targetTable == null)
+            return (0, 0, 0, 0);
+
+        var sourceColIndex = sourceTable.Columns.FindIndex(c => c.Id == Relationship.SourceColumnId);
+        var targetColIndex = targetTable.Columns.FindIndex(c => c.Id == Relationship.TargetColumnId);
+
+        var sourceY = sourceTable.Position.Y + HeaderHeight + (sourceColIndex * ColumnRowHeight) + 10;
+        var targetY = targetTable.Position.Y + HeaderHeight + (targetColIndex * ColumnRowHeight) + 10;
+
+        // Connect from right side of source to left side of target (or vice versa)
+        double startX, endX;
+        if (sourceTable.Position.X + sourceTable.Position.Width < targetTable.Position.X)
+        {
+            startX = sourceTable.Position.X + sourceTable.Position.Width;
+            endX = targetTable.Position.X;
+        }
+        else if (targetTable.Position.X + targetTable.Position.Width < sourceTable.Position.X)
+        {
+            startX = sourceTable.Position.X;
+            endX = targetTable.Position.X + targetTable.Position.Width;
+        }
+        else
+        {
+            // Tables overlap horizontally, connect from right sides
+            startX = sourceTable.Position.X + sourceTable.Position.Width;
+            endX = targetTable.Position.X + targetTable.Position.Width;
+        }
+
+        return (startX, sourceY, endX, targetY);
+    }
+}

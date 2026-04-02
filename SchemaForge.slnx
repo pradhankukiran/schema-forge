@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SchemaForge.Core/SchemaForge.Core.csproj" />
+    <Project Path="src/SchemaForge.Shared/SchemaForge.Shared.csproj" />
+    <Project Path="src/SchemaForge.Wasm/SchemaForge.Wasm.csproj" />
+  </Folder>
+</Solution>

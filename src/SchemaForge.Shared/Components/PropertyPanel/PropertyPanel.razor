@@ -1,0 +1,148 @@
+@inject SchemaState SchemaState
+
+<aside class="sf-property-panel">
+    @if (Table != null)
+    {
+        <div class="sf-panel-header">
+            <span>Table Properties</span>
+            <button class="sf-btn sf-btn-sm sf-btn-danger"
+                    @onclick="DeleteTable"
+                    title="Delete Table">Delete</button>
+        </div>
+
+        <div class="sf-panel-body">
+            <div class="sf-field">
+                <label class="sf-label">Name</label>
+                <input type="text" class="sf-input" value="@Table.Name"
+                       @onchange="e => UpdateTableName(e.Value?.ToString() ?? string.Empty)" />
+            </div>
+
+            <div class="sf-field">
+                <label class="sf-label">Color</label>
+                <div class="sf-color-picker">
+                    @foreach (var color in AccentColors)
+                    {
+                        <button class="sf-color-swatch @(Table.AccentColor == color ? "active" : "")"
+                                style="background: @color;"
+                                @onclick="() => UpdateTableColor(color)"></button>
+                    }
+                </div>
+            </div>
+
+            <div class="sf-panel-section">
+                <div class="sf-section-header">
+                    <span>Columns</span>
+                    <button class="sf-btn sf-btn-sm" @onclick="AddColumn">+ Column</button>
+                </div>
+
+                @foreach (var col in Table.Columns)
+                {
+                    <div class="sf-column-editor" @key="col.Id">
+                        <div class="sf-column-row-edit">
+                            <input type="text" class="sf-input sf-input-sm" value="@col.Name"
+                                   @onchange="e => UpdateColumn(col, e.Value?.ToString() ?? string.Empty, col.DataType, col.IsPrimaryKey, col.IsNullable)" />
+
+                            <select class="sf-select sf-select-sm"
+                                    value="@col.DataType"
+                                    @onchange="e => OnDataTypeChanged(col, e)">
+                                @foreach (var dt in Enum.GetValues<LogicalDataType>())
+                                {
+                                    <option value="@dt">@dt.ToString().ToLowerInvariant()</option>
+                                }
+                            </select>
+
+                            <button class="sf-btn sf-btn-icon"
+                                    title="Delete Column"
+                                    @onclick="() => DeleteColumn(col.Id)">x</button>
+                        </div>
+                        <div class="sf-column-flags">
+                            <label class="sf-checkbox">
+                                <input type="checkbox" checked="@col.IsPrimaryKey"
+                                       @onchange="e => UpdateColumn(col, col.Name, col.DataType, (bool)(e.Value ?? false), col.IsNullable)" />
+                                PK
+                            </label>
+                            <label class="sf-checkbox">
+                                <input type="checkbox" checked="@col.IsNullable"
+                                       @onchange="e => UpdateColumn(col, col.Name, col.DataType, col.IsPrimaryKey, (bool)(e.Value ?? false))" />
+                                Nullable
+                            </label>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="sf-panel-empty">
+            Select a table to view its properties.
+        </div>
+    }
+</aside>
+
+@code {
+    [Parameter] public TableDefinition? Table { get; set; }
+
+    private static readonly string[] AccentColors =
+    [
+        "#1B5E9E", "#2E7D32", "#C62828", "#EF6C00",
+        "#6A1B9A", "#00838F", "#4E342E", "#37474F",
+        "#AD1457", "#283593", "#558B2F", "#FF6F00"
+    ];
+
+    private void UpdateTableName(string name)
+    {
+        if (Table == null) return;
+        SchemaState.Dispatch(new UpdateTableAction(Table.Id, name, Table.Comment, Table.AccentColor));
+    }
+
+    private void UpdateTableColor(string color)
+    {
+        if (Table == null) return;
+        SchemaState.Dispatch(new UpdateTableAction(Table.Id, Table.Name, Table.Comment, color));
+    }
+
+    private void AddColumn()
+    {
+        if (Table == null) return;
+        var col = new ColumnDefinition
+        {
+            Name = $"column_{Table.Columns.Count + 1}",
+            DataType = LogicalDataType.Text,
+            OrdinalPosition = Table.Columns.Count
+        };
+        SchemaState.Dispatch(new AddColumnAction(Table.Id, col));
+    }
+
+    private void UpdateColumn(ColumnDefinition col, string name, LogicalDataType dataType, bool isPk, bool isNullable)
+    {
+        if (Table == null) return;
+        SchemaState.Dispatch(new UpdateColumnAction(Table.Id, col with
+        {
+            Name = name,
+            DataType = dataType,
+            IsPrimaryKey = isPk,
+            IsNullable = isNullable
+        }));
+    }
+
+    private void DeleteColumn(string columnId)
+    {
+        if (Table == null) return;
+        SchemaState.Dispatch(new RemoveColumnAction(Table.Id, columnId));
+    }
+
+    private void OnDataTypeChanged(ColumnDefinition col, ChangeEventArgs e)
+    {
+        if (Table == null) return;
+        var typeName = e.Value?.ToString() ?? "Text";
+        if (Enum.TryParse<LogicalDataType>(typeName, out var dataType))
+            UpdateColumn(col, col.Name, dataType, col.IsPrimaryKey, col.IsNullable);
+    }
+
+    private void DeleteTable()
+    {
+        if (Table == null) return;
+        SchemaState.Dispatch(new RemoveTableAction(Table.Id));
+    }
+}

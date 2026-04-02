@@ -1,0 +1,15 @@
+/* Minimal Wasm-specific overrides - main styles come from SchemaForge.Shared */
+
+#blazor-error-ui {
+    display: none;
+}
+
+.blazor-error-boundary {
+    background: #b32121;
+    padding: 1rem;
+    color: white;
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred.";
+}

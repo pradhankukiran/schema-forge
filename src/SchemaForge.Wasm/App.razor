@@ -1,0 +1,10 @@
+@using SchemaForge.Shared.Layout
+
+<Router AppAssembly="@typeof(SchemaForge.Shared.Pages.Designer).Assembly"
+        AdditionalAssemblies="new[] { typeof(App).Assembly }"
+        NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+</Router>

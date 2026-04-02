@@ -1,0 +1,79 @@
+@page "/designer"
+@page "/"
+@inject SchemaState SchemaState
+@inject IDdlGeneratorService DdlGenerator
+@implements IDisposable
+
+<div class="sf-designer">
+    <div class="sf-designer-sidebar">
+        <SchemaExplorer SelectedTableId="@_selectedTableId" OnTableClick="OnExplorerTableClick" />
+    </div>
+
+    <div class="sf-designer-main">
+        @if (_isDesignMode)
+        {
+            <DesignCanvas OnTableSelected="OnTableSelected" />
+        }
+        else
+        {
+            <div class="sf-query-placeholder">
+                <p>Query Mode coming soon.</p>
+                <p>For now, view the generated DDL below.</p>
+            </div>
+        }
+
+        <div class="sf-ddl-preview @(_showDdl ? "open" : "")">
+            <div class="sf-ddl-header" @onclick="() => _showDdl = !_showDdl">
+                <span>DDL Preview</span>
+                <span class="sf-ddl-toggle">@(_showDdl ? "Hide" : "Show")</span>
+            </div>
+            @if (_showDdl)
+            {
+                <pre class="sf-ddl-code"><code>@GenerateDdl()</code></pre>
+            }
+        </div>
+    </div>
+
+    <div class="sf-designer-props">
+        <PropertyPanel Table="@SelectedTable" />
+    </div>
+</div>
+
+@code {
+    private bool _isDesignMode = true;
+    private bool _showDdl;
+    private string? _selectedTableId;
+
+    private TableDefinition? SelectedTable =>
+        _selectedTableId != null
+            ? SchemaState.Document.Tables.FirstOrDefault(t => t.Id == _selectedTableId)
+            : null;
+
+    protected override void OnInitialized()
+    {
+        SchemaState.OnChange += StateHasChanged;
+    }
+
+    private void OnTableSelected(TableDefinition table)
+    {
+        _selectedTableId = table.Id;
+    }
+
+    private void OnExplorerTableClick(string tableId)
+    {
+        _selectedTableId = tableId;
+    }
+
+    private string GenerateDdl()
+    {
+        if (SchemaState.Document.Tables.Count == 0)
+            return "-- No tables defined yet.";
+
+        return DdlGenerator.GenerateFullDdl(SchemaState.Document);
+    }
+
+    public void Dispose()
+    {
+        SchemaState.OnChange -= StateHasChanged;
+    }
+}

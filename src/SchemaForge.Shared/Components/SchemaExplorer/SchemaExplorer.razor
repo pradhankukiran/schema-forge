@@ -1,0 +1,71 @@
+@inject SchemaState SchemaState
+@implements IDisposable
+
+<aside class="sf-explorer">
+    <div class="sf-explorer-header">
+        <span class="sf-explorer-title">Schema Explorer</span>
+    </div>
+
+    <div class="sf-explorer-search">
+        <input type="text" placeholder="Search tables..." @bind="_searchTerm" @bind:event="oninput" class="sf-input" />
+    </div>
+
+    <div class="sf-explorer-tree">
+        @foreach (var table in FilteredTables)
+        {
+            <div class="sf-tree-item @(table.Id == SelectedTableId ? "selected" : "")"
+                 @onclick="() => OnTableClick.InvokeAsync(table.Id)">
+                <span class="sf-tree-icon" style="color: @table.AccentColor;">T</span>
+                <span class="sf-tree-label">@table.Name</span>
+                <span class="sf-tree-badge">@table.Columns.Count</span>
+            </div>
+
+            @if (table.Id == SelectedTableId)
+            {
+                @foreach (var col in table.Columns)
+                {
+                    <div class="sf-tree-item sf-tree-child">
+                        @if (col.IsPrimaryKey)
+                        {
+                            <span class="sf-tree-icon" style="color: #EF6C00;">K</span>
+                        }
+                        else
+                        {
+                            <span class="sf-tree-icon" style="color: #999;">C</span>
+                        }
+                        <span class="sf-tree-label">@col.Name</span>
+                        <span class="sf-tree-type">@col.DataType.ToString().ToLowerInvariant()</span>
+                    </div>
+                }
+            }
+        }
+
+        @if (SchemaState.Document.Tables.Count == 0)
+        {
+            <div class="sf-tree-empty">No tables yet. Click "+ Table" to create one.</div>
+        }
+    </div>
+</aside>
+
+@code {
+    [Parameter] public string? SelectedTableId { get; set; }
+    [Parameter] public EventCallback<string> OnTableClick { get; set; }
+
+    private string _searchTerm = "";
+
+    private IEnumerable<TableDefinition> FilteredTables =>
+        string.IsNullOrEmpty(_searchTerm)
+            ? SchemaState.Document.Tables
+            : SchemaState.Document.Tables.Where(t =>
+                t.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnInitialized()
+    {
+        SchemaState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        SchemaState.OnChange -= StateHasChanged;
+    }
+}
