@@ -25,6 +25,7 @@ builder.Services.AddSingleton<SchemaForge.Shared.Services.AutoSaveService>();
 // JS Interop Services
 builder.Services.AddSingleton<MonacoEditorInterop>();
 builder.Services.AddSingleton<KeyboardInterop>();
+builder.Services.AddSingleton<FileInterop>();
 builder.Services.AddSingleton<ISqlExecutionService, SqlJsInterop>();
 builder.Services.AddSingleton<IProjectStorageService, IndexedDbStorageService>();
 

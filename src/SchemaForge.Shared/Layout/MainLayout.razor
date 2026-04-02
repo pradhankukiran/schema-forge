@@ -4,10 +4,11 @@
 @inject SchemaState SchemaState
 @inject KeyboardInterop Keyboard
 @inject AutoSaveService AutoSave
+@inject NavigationManager Nav
 @implements IDisposable
 
 <div class="sf-app">
-    <TopBar IsDesignMode="@_isDesignMode" IsDesignModeChanged="SetMode" />
+    <TopBar IsDesignMode="@_isDesignMode" IsDesignModeChanged="SetMode" OnNavigateHome="GoHome" />
     <div class="sf-body">
         <CascadingValue Value="@_isDesignMode" Name="IsDesignMode">
             @Body
@@ -57,6 +58,8 @@
                 break;
         }
     }
+
+    private void GoHome() => Nav.NavigateTo("/home");
 
     public void Dispose()
     {
