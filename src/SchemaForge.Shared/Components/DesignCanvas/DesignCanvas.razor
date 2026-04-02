@@ -1,7 +1,7 @@
 @using SchemaForge.Core.Layout
 @inject SchemaState SchemaState
 @inject IJSRuntime JS
-@implements IDisposable
+@implements IAsyncDisposable
 
 <div class="sf-canvas-container" @ref="_containerRef">
     <div class="sf-canvas-toolbar">
@@ -70,10 +70,16 @@
     [Parameter] public EventCallback<TableDefinition> OnTableSelected { get; set; }
 
     private ElementReference _containerRef;
+    private IJSObjectReference? _jsModule;
+    private DotNetObjectReference<DesignCanvas>? _dotNetRef;
     private string? _selectedTableId;
     private double _zoom = 1.0;
     private double _panX;
     private double _panY;
+    private double _containerWidth = 960;
+    private double _containerHeight = 600;
+    private double _containerLeft;
+    private double _containerTop;
     private int GridSize => SchemaState.Document.Canvas.GridSize;
 
     // Drag state
@@ -94,11 +100,39 @@
     private double _drawLineStartX, _drawLineStartY;
     private double _drawLineEndX, _drawLineEndY;
 
-    private string ViewBox => $"{_panX} {_panY} {960 / _zoom} {600 / _zoom}";
+    private string ViewBox => $"{_panX} {_panY} {_containerWidth / _zoom} {_containerHeight / _zoom}";
 
     protected override void OnInitialized()
     {
         SchemaState.OnChange += StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./_content/SchemaForge.Shared/js/canvasInterop.js");
+
+            var size = await _jsModule.InvokeAsync<ContainerRect>("getElementSize", _containerRef);
+            _containerWidth = size.Width;
+            _containerHeight = size.Height;
+            _containerLeft = size.Left;
+            _containerTop = size.Top;
+
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await _jsModule.InvokeVoidAsync("observeResize", _containerRef, _dotNetRef);
+
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public void OnContainerResized(double w, double h)
+    {
+        _containerWidth = w;
+        _containerHeight = h;
+        StateHasChanged();
     }
 
     private void AddTable()
@@ -109,8 +143,8 @@
             Name = $"table_{tableCount + 1}",
             Position = new CanvasPosition
             {
-                X = _panX + (480 / _zoom) - 120,
-                Y = _panY + (300 / _zoom) - 60
+                X = _panX + (_containerWidth / 2 / _zoom) - 120,
+                Y = _panY + (_containerHeight / 2 / _zoom) - 60
             },
             Columns =
             [
@@ -172,7 +206,7 @@
                 SourceColumnId = _drawSourceColumnId,
                 TargetTableId = args.TableId,
                 TargetColumnId = args.ColumnId,
-                Name = $"fk_{_drawSourceTableId[..8]}_{args.TableId[..8]}"
+                Name = $"fk_{SafeSub(_drawSourceTableId)}_{SafeSub(args.TableId)}"
             };
             SchemaState.Dispatch(new AddRelationshipAction(rel));
         }
@@ -215,9 +249,8 @@
         }
         else if (_isDrawingRelationship)
         {
-            // Approximate SVG coordinate from client coordinate
-            _drawLineEndX = _panX + e.OffsetX / _zoom;
-            _drawLineEndY = _panY + e.OffsetY / _zoom;
+            _drawLineEndX = _panX + (e.ClientX - _containerLeft) / _zoom;
+            _drawLineEndY = _panY + (e.ClientY - _containerTop) / _zoom;
         }
     }
 
@@ -242,12 +275,21 @@
 
     private void OnWheel(WheelEventArgs e)
     {
+        var oldZoom = _zoom;
         var delta = e.DeltaY > 0 ? 0.9 : 1.1;
         _zoom = Math.Clamp(_zoom * delta, 0.25, 4.0);
+
+        // Anchor zoom to cursor position
+        var mouseX = _panX + (e.ClientX - _containerLeft) / oldZoom;
+        var mouseY = _panY + (e.ClientY - _containerTop) / oldZoom;
+        _panX = mouseX - (e.ClientX - _containerLeft) / _zoom;
+        _panY = mouseY - (e.ClientY - _containerTop) / _zoom;
+
+        SyncZoomToState();
     }
 
-    private void ZoomIn() => _zoom = Math.Min(_zoom * 1.2, 4.0);
-    private void ZoomOut() => _zoom = Math.Max(_zoom * 0.8, 0.25);
+    private void ZoomIn() { _zoom = Math.Min(_zoom * 1.2, 4.0); SyncZoomToState(); }
+    private void ZoomOut() { _zoom = Math.Max(_zoom * 0.8, 0.25); SyncZoomToState(); }
 
     private void ZoomFit()
     {
@@ -256,6 +298,7 @@
             _panX = 0;
             _panY = 0;
             _zoom = 1.0;
+            SyncZoomToState();
             return;
         }
 
@@ -267,10 +310,11 @@
         var width = maxX - minX;
         var height = maxY - minY;
 
-        _zoom = Math.Min(960.0 / width, 600.0 / height);
+        _zoom = Math.Min(_containerWidth / width, _containerHeight / height);
         _zoom = Math.Clamp(_zoom, 0.25, 4.0);
         _panX = minX;
         _panY = minY;
+        SyncZoomToState();
     }
 
     private void AutoLayoutForce()
@@ -302,8 +346,24 @@
         return Math.Round(value / grid) * grid;
     }
 
-    public void Dispose()
+    private static string SafeSub(string s) => s.Length >= 8 ? s[..8] : s;
+
+    private void SyncZoomToState()
+    {
+        SchemaState.Dispatch(new UpdateCanvasSettingsAction(
+            SchemaState.Document.Canvas with { Zoom = _zoom }));
+    }
+
+    public async ValueTask DisposeAsync()
     {
         SchemaState.OnChange -= StateHasChanged;
+        if (_jsModule is not null)
+        {
+            await _jsModule.InvokeVoidAsync("disposeResize");
+            await _jsModule.DisposeAsync();
+        }
+        _dotNetRef?.Dispose();
     }
+
+    private record ContainerRect(double Width, double Height, double Left, double Top);
 }
