@@ -1,0 +1,16 @@
+@if (Visible)
+{
+    <div class="sf-context-menu" style="left: @(X)px; top: @(Y)px;" @onfocusout="Hide" tabindex="-1">
+        @ChildContent
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public double X { get; set; }
+    [Parameter] public double Y { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private void Hide() => OnClose.InvokeAsync();
+}
