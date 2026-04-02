@@ -8,6 +8,9 @@ public class SqliteDdlGenerator : IDdlGeneratorService
 {
     public SqlDialect Dialect => SqlDialect.SQLite;
 
+    private static string QuoteId(string name) => $"\"{name.Replace("\"", "\"\"")}\"";
+
+
     public string GenerateFullDdl(SchemaDocument schema)
     {
         var sb = new StringBuilder();
@@ -39,7 +42,7 @@ public class SqliteDdlGenerator : IDdlGeneratorService
     public string GenerateCreateTable(TableDefinition table, SchemaDocument schema)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"CREATE TABLE \"{table.Name}\" (");
+        sb.AppendLine($"CREATE TABLE {QuoteId(table.Name)} (");
 
         var lines = new List<string>();
 
@@ -52,7 +55,7 @@ public class SqliteDdlGenerator : IDdlGeneratorService
         var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
         if (pkColumns.Count > 1)
         {
-            var pkNames = string.Join(", ", pkColumns.Select(c => $"\"{c.Name}\""));
+            var pkNames = string.Join(", ", pkColumns.Select(c => QuoteId(c.Name)));
             lines.Add($"  PRIMARY KEY ({pkNames})");
         }
 
@@ -69,7 +72,7 @@ public class SqliteDdlGenerator : IDdlGeneratorService
 
             if (sourceCol != null && targetTable != null && targetCol != null)
             {
-                var fk = $"  FOREIGN KEY (\"{sourceCol.Name}\") REFERENCES \"{targetTable.Name}\" (\"{targetCol.Name}\")";
+                var fk = $"  FOREIGN KEY ({QuoteId(sourceCol.Name)}) REFERENCES {QuoteId(targetTable.Name)} ({QuoteId(targetCol.Name)})";
                 if (rel.OnDelete != ReferentialAction.NoAction)
                     fk += $" ON DELETE {FormatReferentialAction(rel.OnDelete)}";
                 if (rel.OnUpdate != ReferentialAction.NoAction)
@@ -81,7 +84,7 @@ public class SqliteDdlGenerator : IDdlGeneratorService
         // Check constraints
         foreach (var check in table.CheckConstraints)
         {
-            var name = string.IsNullOrEmpty(check.Name) ? "" : $"CONSTRAINT \"{check.Name}\" ";
+            var name = string.IsNullOrEmpty(check.Name) ? "" : $"CONSTRAINT {QuoteId(check.Name)} ";
             lines.Add($"  {name}CHECK ({check.Expression})");
         }
 
@@ -97,9 +100,9 @@ public class SqliteDdlGenerator : IDdlGeneratorService
         var columns = index.ColumnIds
             .Select(id => table.Columns.FirstOrDefault(c => c.Id == id))
             .Where(c => c != null)
-            .Select(c => $"\"{c!.Name}\"");
+            .Select(c => QuoteId(c!.Name));
 
-        var sql = $"CREATE {unique}INDEX \"{index.Name}\" ON \"{table.Name}\" ({string.Join(", ", columns)})";
+        var sql = $"CREATE {unique}INDEX {QuoteId(index.Name)} ON {QuoteId(table.Name)} ({string.Join(", ", columns)})";
 
         if (!string.IsNullOrEmpty(index.WhereClause))
             sql += $" WHERE {index.WhereClause}";
@@ -108,11 +111,11 @@ public class SqliteDdlGenerator : IDdlGeneratorService
     }
 
     public string GenerateDropTable(string tableName) =>
-        $"DROP TABLE IF EXISTS \"{tableName}\";";
+        $"DROP TABLE IF EXISTS {QuoteId(tableName)};";
 
     private string GenerateColumnDef(ColumnDefinition col)
     {
-        var parts = new List<string> { $"\"{col.Name}\"", MapDataType(col) };
+        var parts = new List<string> { QuoteId(col.Name), MapDataType(col) };
 
         // Single-column PK with autoincrement
         if (col.IsPrimaryKey && col.IsAutoIncrement)
