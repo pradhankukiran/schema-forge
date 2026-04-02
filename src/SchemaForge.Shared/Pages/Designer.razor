@@ -5,6 +5,7 @@
 @implements IDisposable
 
 <div class="sf-designer">
+    @{ _isDesignMode = IsDesignMode; }
     <div class="sf-designer-sidebar">
         <SchemaExplorer SelectedTableId="@_selectedTableId" OnTableClick="OnExplorerTableClick" />
     </div>
@@ -13,33 +14,39 @@
         @if (_isDesignMode)
         {
             <DesignCanvas OnTableSelected="OnTableSelected" />
+
+            <div class="sf-ddl-preview @(_showDdl ? "open" : "")">
+                <div class="sf-ddl-header" @onclick="() => _showDdl = !_showDdl">
+                    <span>DDL Preview</span>
+                    <span class="sf-ddl-toggle">@(_showDdl ? "Hide" : "Show")</span>
+                </div>
+                @if (_showDdl)
+                {
+                    <pre class="sf-ddl-code"><code>@GenerateDdl()</code></pre>
+                }
+            </div>
         }
         else
         {
-            <div class="sf-query-placeholder">
-                <p>Query Mode coming soon.</p>
-                <p>For now, view the generated DDL below.</p>
-            </div>
+            <QueryEditor />
         }
-
-        <div class="sf-ddl-preview @(_showDdl ? "open" : "")">
-            <div class="sf-ddl-header" @onclick="() => _showDdl = !_showDdl">
-                <span>DDL Preview</span>
-                <span class="sf-ddl-toggle">@(_showDdl ? "Hide" : "Show")</span>
-            </div>
-            @if (_showDdl)
-            {
-                <pre class="sf-ddl-code"><code>@GenerateDdl()</code></pre>
-            }
-        </div>
     </div>
 
     <div class="sf-designer-props">
-        <PropertyPanel Table="@SelectedTable" />
+        @if (_isDesignMode)
+        {
+            <PropertyPanel Table="@SelectedTable" />
+        }
+        else
+        {
+            <QueryHistoryPanel />
+        }
     </div>
 </div>
 
 @code {
+    [CascadingParameter(Name = "IsDesignMode")] public bool IsDesignMode { get; set; } = true;
+
     private bool _isDesignMode = true;
     private bool _showDdl;
     private string? _selectedTableId;
