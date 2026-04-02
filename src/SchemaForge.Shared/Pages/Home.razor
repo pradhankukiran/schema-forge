@@ -1,0 +1,116 @@
+@page "/home"
+@inject IProjectStorageService Storage
+@inject SchemaState SchemaState
+@inject QueryState QueryState
+@inject NavigationManager Nav
+
+<div class="sf-home">
+    <div class="sf-home-header">
+        <h1 class="sf-home-title">SchemaForge</h1>
+        <p class="sf-home-subtitle">Visual Database Schema Designer + SQL Playground</p>
+    </div>
+
+    <div class="sf-home-content">
+        <div class="sf-home-section">
+            <div class="sf-section-header">
+                <span>New Project</span>
+            </div>
+            <button class="sf-btn sf-btn-primary sf-btn-lg" @onclick="CreateNewProject">
+                + New Project
+            </button>
+        </div>
+
+        <div class="sf-home-section">
+            <div class="sf-section-header">
+                <span>Sample Schemas</span>
+            </div>
+            <div class="sf-sample-grid">
+                @foreach (var sample in _samples)
+                {
+                    <div class="sf-sample-card" @onclick="() => LoadSample(sample.Key)">
+                        <div class="sf-sample-name">@sample.Name</div>
+                        <div class="sf-sample-desc">@sample.Description</div>
+                        <div class="sf-sample-meta">@sample.TableCount tables</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (_recentProjects.Count > 0)
+        {
+            <div class="sf-home-section">
+                <div class="sf-section-header">
+                    <span>Recent Projects</span>
+                </div>
+                <div class="sf-recent-list">
+                    @foreach (var project in _recentProjects)
+                    {
+                        <div class="sf-recent-item">
+                            <div class="sf-recent-info" @onclick="() => OpenProject(project.Id)">
+                                <div class="sf-recent-name">@project.Name</div>
+                                <div class="sf-recent-meta">
+                                    @project.TableCount tables | @project.ModifiedAt.ToString("MMM d, yyyy HH:mm")
+                                </div>
+                            </div>
+                            <button class="sf-btn sf-btn-icon" title="Delete"
+                                    @onclick="() => DeleteProject(project.Id)">x</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<ProjectSummary> _recentProjects = [];
+    private static readonly SampleInfo[] _samples =
+    [
+        new("blog", "Blog", "Users, posts, comments, tags", 5),
+        new("ecommerce", "E-Commerce", "Products, orders, customers, reviews", 7),
+        new("northwind", "Northwind", "Classic sample: customers, orders, products", 8),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _recentProjects = (await Storage.ListProjectsAsync()).ToList();
+        }
+        catch
+        {
+            _recentProjects = [];
+        }
+    }
+
+    private void CreateNewProject()
+    {
+        SchemaState.LoadDocument(new SchemaDocument { Name = "Untitled Project" });
+        QueryState.LoadState([], 0, []);
+        Nav.NavigateTo("/");
+    }
+
+    private async Task OpenProject(string projectId)
+    {
+        var project = await Storage.LoadProjectAsync(projectId);
+        SchemaState.LoadDocument(project.Schema);
+        QueryState.LoadState(project.QueryTabs, project.ActiveQueryTabIndex, project.QueryHistory);
+        Nav.NavigateTo("/");
+    }
+
+    private async Task DeleteProject(string projectId)
+    {
+        await Storage.DeleteProjectAsync(projectId);
+        _recentProjects.RemoveAll(p => p.Id == projectId);
+    }
+
+    private void LoadSample(string key)
+    {
+        var schema = SampleSchemas.Get(key);
+        SchemaState.LoadDocument(schema);
+        QueryState.LoadState([], 0, []);
+        Nav.NavigateTo("/");
+    }
+
+    private record SampleInfo(string Key, string Name, string Description, int TableCount);
+}
