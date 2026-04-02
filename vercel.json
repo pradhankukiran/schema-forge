@@ -1,4 +1,6 @@
 {
+  "buildCommand": "dotnet publish src/SchemaForge.Wasm/SchemaForge.Wasm.csproj -c Release -o output --nologo",
+  "outputDirectory": "output/wwwroot",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
