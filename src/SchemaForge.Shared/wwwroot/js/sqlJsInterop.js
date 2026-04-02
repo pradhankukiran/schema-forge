@@ -1,15 +1,18 @@
 let db = null;
 let SQL = null;
 
-export async function initialize() {
-    if (SQL) return true;
-
-    SQL = await initSqlJs({
-        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/${file}`
-    });
-
-    db = new SQL.Database();
-    return true;
+let _initPromise = null;
+export function initialize() {
+    if (!_initPromise) {
+        _initPromise = (async () => {
+            SQL = await initSqlJs({
+                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/${file}`
+            });
+            db = new SQL.Database();
+            return true;
+        })();
+    }
+    return _initPromise;
 }
 
 export function execute(sql) {
@@ -56,21 +59,26 @@ export function execute(sql) {
 
 export function executeBatch(sql) {
     if (!db) throw new Error("Database not initialized");
-
-    const statements = sql.split(";").map(s => s.trim()).filter(s => s.length > 0);
-    const results = [];
-
-    for (const stmt of statements) {
-        results.push(execute(stmt + ";"));
+    const start = performance.now();
+    try {
+        const results = db.exec(sql);
+        const elapsed = performance.now() - start;
+        return results.map(r => ({
+            success: true,
+            columns: r.columns,
+            rows: r.values,
+            rowsAffected: 0,
+            executionTimeMs: elapsed / results.length,
+            errorMessage: null
+        }));
+    } catch (e) {
+        return [{ success: false, columns: [], rows: [], rowsAffected: 0, executionTimeMs: performance.now() - start, errorMessage: e.message }];
     }
-
-    return results;
 }
 
 export function reset() {
-    if (db) {
-        db.close();
-    }
+    if (db) { db.close(); }
+    if (!SQL) throw new Error("Database not initialized");
     db = new SQL.Database();
     return true;
 }
