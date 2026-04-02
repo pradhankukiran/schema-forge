@@ -2,7 +2,10 @@ const DB_NAME = "SchemaForge";
 const DB_VERSION = 1;
 const STORE_NAME = "projects";
 
+let _db = null;
+
 function openDb() {
+    if (_db) return Promise.resolve(_db);
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         request.onupgradeneeded = (e) => {
@@ -11,7 +14,7 @@ function openDb() {
                 db.createObjectStore(STORE_NAME, { keyPath: "id" });
             }
         };
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => { _db = request.result; resolve(_db); };
         request.onerror = () => reject(request.error);
     });
 }
