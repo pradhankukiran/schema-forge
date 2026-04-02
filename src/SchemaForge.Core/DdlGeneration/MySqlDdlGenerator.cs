@@ -8,6 +8,9 @@ public class MySqlDdlGenerator : IDdlGeneratorService
 {
     public SqlDialect Dialect => SqlDialect.MySQL;
 
+    private static string QuoteId(string name) => $"`{name.Replace("`", "``")}`";
+
+
     public string GenerateFullDdl(SchemaDocument schema)
     {
         var sb = new StringBuilder();
@@ -50,7 +53,7 @@ public class MySqlDdlGenerator : IDdlGeneratorService
     public string GenerateCreateTable(TableDefinition table, SchemaDocument schema)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"CREATE TABLE `{table.Name}` (");
+        sb.AppendLine($"CREATE TABLE {QuoteId(table.Name)} (");
 
         var lines = new List<string>();
 
@@ -64,14 +67,14 @@ public class MySqlDdlGenerator : IDdlGeneratorService
         // Composite primary key
         if (pkColumns.Count > 1)
         {
-            var pkNames = string.Join(", ", pkColumns.Select(c => $"`{c.Name}`"));
+            var pkNames = string.Join(", ", pkColumns.Select(c => QuoteId(c.Name)));
             lines.Add($"  PRIMARY KEY ({pkNames})");
         }
 
         // Check constraints
         foreach (var check in table.CheckConstraints)
         {
-            var name = string.IsNullOrEmpty(check.Name) ? "" : $"CONSTRAINT `{check.Name}` ";
+            var name = string.IsNullOrEmpty(check.Name) ? "" : $"CONSTRAINT {QuoteId(check.Name)} ";
             lines.Add($"  {name}CHECK ({check.Expression})");
         }
 
@@ -87,13 +90,13 @@ public class MySqlDdlGenerator : IDdlGeneratorService
         var columns = index.ColumnIds
             .Select(id => table.Columns.FirstOrDefault(c => c.Id == id))
             .Where(c => c != null)
-            .Select(c => $"`{c!.Name}`");
+            .Select(c => QuoteId(c!.Name));
 
-        return $"CREATE {unique}INDEX `{index.Name}` ON `{table.Name}` ({string.Join(", ", columns)});";
+        return $"CREATE {unique}INDEX {QuoteId(index.Name)} ON {QuoteId(table.Name)} ({string.Join(", ", columns)});";
     }
 
     public string GenerateDropTable(string tableName) =>
-        $"DROP TABLE IF EXISTS `{tableName}`;";
+        $"DROP TABLE IF EXISTS {QuoteId(tableName)};";
 
     private IEnumerable<string> GenerateForeignKeys(TableDefinition table, SchemaDocument schema)
     {
@@ -113,8 +116,8 @@ public class MySqlDdlGenerator : IDdlGeneratorService
                 if (string.IsNullOrEmpty(constraintName))
                     constraintName = $"fk_{table.Name}_{sourceCol.Name}";
 
-                var fk = $"ALTER TABLE `{table.Name}` ADD CONSTRAINT `{constraintName}` " +
-                         $"FOREIGN KEY (`{sourceCol.Name}`) REFERENCES `{targetTable.Name}` (`{targetCol.Name}`)";
+                var fk = $"ALTER TABLE {QuoteId(table.Name)} ADD CONSTRAINT {QuoteId(constraintName)} " +
+                         $"FOREIGN KEY ({QuoteId(sourceCol.Name)}) REFERENCES {QuoteId(targetTable.Name)} ({QuoteId(targetCol.Name)})";
 
                 if (rel.OnDelete != ReferentialAction.NoAction)
                     fk += $" ON DELETE {FormatReferentialAction(rel.OnDelete)}";
@@ -128,7 +131,7 @@ public class MySqlDdlGenerator : IDdlGeneratorService
 
     private string GenerateColumnDef(ColumnDefinition col, bool isSolePk)
     {
-        var parts = new List<string> { $"`{col.Name}`", MapDataType(col) };
+        var parts = new List<string> { QuoteId(col.Name), MapDataType(col) };
 
         // Single-column PK with auto increment
         if (isSolePk && col.IsAutoIncrement)
