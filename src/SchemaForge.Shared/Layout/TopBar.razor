@@ -1,6 +1,7 @@
 @using SchemaForge.Shared.Interop
+@using SchemaForge.Core.DdlGeneration
 @inject SchemaState SchemaState
-@inject IDdlGeneratorService DdlGenerator
+@inject DdlGeneratorFactory DdlFactory
 @inject FileInterop FileExport
 
 <header class="sf-topbar">
@@ -16,7 +17,8 @@
         </button>
     </div>
     <div class="sf-topbar-right">
-        <span class="sf-project-name">@SchemaState.Document.Name</span>
+        <DialectSelector />
+        <button class="sf-btn sf-btn-sm" @onclick="() => _showImport = true">Import DDL</button>
         <button class="sf-btn sf-btn-sm" @onclick="ExportSql"
                 disabled="@(SchemaState.Document.Tables.Count == 0)">
             Export SQL
@@ -25,17 +27,23 @@
     </div>
 </header>
 
+<ImportDdlDialog IsOpen="_showImport" OnClose="() => _showImport = false" />
+
 @code {
     [Parameter] public bool IsDesignMode { get; set; } = true;
     [Parameter] public EventCallback<bool> IsDesignModeChanged { get; set; }
     [Parameter] public EventCallback OnNavigateHome { get; set; }
 
+    private bool _showImport;
+
     private async Task ExportSql()
     {
         if (SchemaState.Document.Tables.Count == 0) return;
 
-        var ddl = DdlGenerator.GenerateFullDdl(SchemaState.Document);
-        var filename = $"{SchemaState.Document.Name.Replace(" ", "_").ToLowerInvariant()}.sql";
+        var dialect = SchemaState.Document.TargetDialect;
+        var generator = DdlFactory.GetGenerator(dialect);
+        var ddl = generator.GenerateFullDdl(SchemaState.Document);
+        var filename = $"{SchemaState.Document.Name.Replace(" ", "_").ToLowerInvariant()}_{dialect.ToString().ToLowerInvariant()}.sql";
         await FileExport.DownloadSqlAsync(filename, ddl);
     }
 }

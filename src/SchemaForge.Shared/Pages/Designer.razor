@@ -1,6 +1,7 @@
 @page "/designer"
 @inject SchemaState SchemaState
-@inject IDdlGeneratorService DdlGenerator
+@using SchemaForge.Core.DdlGeneration
+@inject DdlGeneratorFactory DdlFactory
 @implements IDisposable
 
 <div class="sf-designer">
@@ -75,7 +76,8 @@
         if (SchemaState.Document.Tables.Count == 0)
             return "-- No tables defined yet.";
 
-        return DdlGenerator.GenerateFullDdl(SchemaState.Document);
+        var generator = DdlFactory.GetGenerator(SchemaState.Document.TargetDialect);
+        return generator.GenerateFullDdl(SchemaState.Document);
     }
 
     public void Dispose()
