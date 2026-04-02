@@ -25,6 +25,7 @@
          @onmousemove="OnMouseMove"
          @onmouseup="OnMouseUp"
          @onwheel="OnWheel"
+         @onwheel:preventDefault="true"
          @oncontextmenu:preventDefault="true">
 
         @if (SchemaState.Document.Canvas.ShowGrid)
