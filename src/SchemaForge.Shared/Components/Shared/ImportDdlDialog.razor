@@ -1,0 +1,66 @@
+@using SchemaForge.Core.DdlParsing
+@inject SchemaState SchemaState
+
+@if (IsOpen)
+{
+    <div class="sf-modal-overlay" @onclick="Close">
+        <div class="sf-modal" @onclick:stopPropagation="true">
+            <div class="sf-modal-header">
+                <span>Import DDL</span>
+                <button class="sf-btn sf-btn-icon" @onclick="Close">x</button>
+            </div>
+            <div class="sf-modal-body">
+                <p class="sf-modal-hint">Paste CREATE TABLE / ALTER TABLE SQL statements below.</p>
+                <textarea class="sf-textarea" rows="12" @bind="_ddlText" placeholder="CREATE TABLE users (&#10;  id INTEGER PRIMARY KEY,&#10;  name VARCHAR(100) NOT NULL&#10;);"></textarea>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="sf-error-banner">@_error</div>
+                }
+            </div>
+            <div class="sf-modal-footer">
+                <button class="sf-btn" @onclick="Close">Cancel</button>
+                <button class="sf-btn sf-btn-primary" @onclick="Import"
+                        disabled="@string.IsNullOrWhiteSpace(_ddlText)">
+                    Import
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string _ddlText = "";
+    private string? _error;
+
+    private void Import()
+    {
+        _error = null;
+        try
+        {
+            var parsed = DdlParser.Parse(_ddlText);
+            if (parsed.Tables.Count == 0)
+            {
+                _error = "No tables found in the provided DDL.";
+                return;
+            }
+
+            SchemaState.LoadDocument(parsed);
+            _ddlText = "";
+            Close();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Parse error: {ex.Message}";
+        }
+    }
+
+    private void Close()
+    {
+        _error = null;
+        OnClose.InvokeAsync();
+    }
+}
