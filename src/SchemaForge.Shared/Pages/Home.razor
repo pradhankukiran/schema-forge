@@ -29,7 +29,7 @@
             <div class="sf-sample-grid">
                 @foreach (var sample in _samples)
                 {
-                    <div class="sf-sample-card" @onclick="() => LoadSample(sample.Key)">
+                    <div @key="sample.Key" class="sf-sample-card" @onclick="() => LoadSample(sample.Key)">
                         <div class="sf-sample-name">@sample.Name</div>
                         <div class="sf-sample-desc">@sample.Description</div>
                         <div class="sf-sample-meta">@sample.TableCount tables</div>
@@ -47,15 +47,18 @@
                 <div class="sf-recent-list">
                     @foreach (var project in _recentProjects)
                     {
-                        <div class="sf-recent-item">
+                        <div @key="project.Id" class="sf-recent-item">
                             <div class="sf-recent-info" @onclick="() => OpenProject(project.Id)">
                                 <div class="sf-recent-name">@project.Name</div>
                                 <div class="sf-recent-meta">
                                     @project.TableCount tables | @project.ModifiedAt.ToString("MMM d, yyyy HH:mm")
                                 </div>
                             </div>
-                            <button class="sf-btn sf-btn-icon" title="Delete"
-                                    @onclick="() => DeleteProject(project.Id)">x</button>
+                            <button class="sf-btn sf-btn-icon @(_confirmDeleteId == project.Id ? "sf-btn-danger" : "")"
+                                    title="@(_confirmDeleteId == project.Id ? "Click again to confirm" : "Delete")"
+                                    @onclick="() => ConfirmDelete(project.Id)" @onclick:stopPropagation="true">
+                                @(_confirmDeleteId == project.Id ? "!" : "x")
+                            </button>
                         </div>
                     }
                 </div>
@@ -66,6 +69,7 @@
 
 @code {
     private List<ProjectSummary> _recentProjects = [];
+    private string? _confirmDeleteId;
     private static readonly SampleInfo[] _samples =
     [
         new("blog", "Blog", "Users, posts, comments, tags", 5),
@@ -98,6 +102,20 @@
         SchemaState.LoadDocument(project.Schema);
         QueryState.LoadState(project.QueryTabs, project.ActiveQueryTabIndex, project.QueryHistory);
         Nav.NavigateTo("/designer");
+    }
+
+    private async Task ConfirmDelete(string projectId)
+    {
+        if (_confirmDeleteId == projectId)
+        {
+            // Second click = confirmed
+            await DeleteProject(projectId);
+            _confirmDeleteId = null;
+        }
+        else
+        {
+            _confirmDeleteId = projectId;
+        }
     }
 
     private async Task DeleteProject(string projectId)
