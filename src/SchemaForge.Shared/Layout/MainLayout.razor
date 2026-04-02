@@ -7,9 +7,10 @@
 @inject NavigationManager Nav
 @implements IDisposable
 
-<div class="sf-app">
+<div class="sf-app" role="application" aria-label="SchemaForge">
+    <div class="sf-small-screen-banner">For the best experience, use a screen wider than 960px.</div>
     <TopBar IsDesignMode="@_isDesignMode" IsDesignModeChanged="SetMode" OnNavigateHome="GoHome" />
-    <div class="sf-body">
+    <div class="sf-body" role="main">
         <CascadingValue Value="@_isDesignMode" Name="IsDesignMode">
             @Body
         </CascadingValue>
