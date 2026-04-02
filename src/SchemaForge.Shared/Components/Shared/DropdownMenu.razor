@@ -1,8 +1,8 @@
-<div class="sf-dropdown @(IsOpen ? "open" : "")" @onfocusout="() => IsOpen = false" tabindex="-1">
-    <button class="sf-btn sf-btn-sm" @onclick="Toggle">@Label</button>
+<div class="sf-dropdown @(IsOpen ? "open" : "")" @onfocusout="HandleFocusOut" tabindex="-1">
+    <button class="sf-btn sf-btn-sm" @onclick="Toggle" @onclick:stopPropagation="true">@Label</button>
     @if (IsOpen)
     {
-        <div class="sf-dropdown-menu">
+        <div class="sf-dropdown-menu" @onclick="Close">
             @ChildContent
         </div>
     }
@@ -15,6 +15,11 @@
     private bool IsOpen;
 
     private void Toggle() => IsOpen = !IsOpen;
-
-    public void Close() => IsOpen = false;
+    private void Close() => IsOpen = false;
+    private async Task HandleFocusOut()
+    {
+        await Task.Delay(150); // Allow click events on children to fire first
+        IsOpen = false;
+        StateHasChanged();
+    }
 }
