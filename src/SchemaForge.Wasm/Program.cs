@@ -29,6 +29,7 @@ builder.Services.AddSingleton<SchemaForge.Shared.Services.AutoSaveService>();
 builder.Services.AddSingleton<MonacoEditorInterop>();
 builder.Services.AddSingleton<KeyboardInterop>();
 builder.Services.AddSingleton<FileInterop>();
+builder.Services.AddSingleton<CanvasExportInterop>();
 builder.Services.AddSingleton<ISqlExecutionService, SqlJsInterop>();
 builder.Services.AddSingleton<IProjectStorageService, IndexedDbStorageService>();
 
