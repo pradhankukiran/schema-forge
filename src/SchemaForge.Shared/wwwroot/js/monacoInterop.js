@@ -72,7 +72,7 @@ export function createEditor(elementId, initialValue, language) {
             if (dotNetRef) {
                 const selectedText = editor.getModel().getValueInRange(editor.getSelection());
                 const text = selectedText || editor.getValue();
-                dotNetRef.invokeMethodAsync("OnExecuteRequested", elementId, text);
+                dotNetRef.invokeMethodAsync("OnExecuteRequested_Internal", elementId, text);
             }
         }
     });
