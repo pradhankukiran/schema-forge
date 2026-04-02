@@ -1,0 +1,20 @@
+<div class="sf-dropdown @(IsOpen ? "open" : "")" @onfocusout="() => IsOpen = false" tabindex="-1">
+    <button class="sf-btn sf-btn-sm" @onclick="Toggle">@Label</button>
+    @if (IsOpen)
+    {
+        <div class="sf-dropdown-menu">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Menu";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool IsOpen;
+
+    private void Toggle() => IsOpen = !IsOpen;
+
+    public void Close() => IsOpen = false;
+}
