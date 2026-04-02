@@ -1,5 +1,10 @@
 @inherits Microsoft.AspNetCore.Components.LayoutComponentBase
+@using SchemaForge.Shared.Interop
+@using SchemaForge.Shared.Services
 @inject SchemaState SchemaState
+@inject KeyboardInterop Keyboard
+@inject AutoSaveService AutoSave
+@implements IDisposable
 
 <div class="sf-app">
     <TopBar IsDesignMode="@_isDesignMode" IsDesignModeChanged="SetMode" />
@@ -14,9 +19,47 @@
 @code {
     private bool _isDesignMode = true;
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Keyboard.InitializeAsync();
+            Keyboard.OnShortcut += HandleShortcut;
+        }
+    }
+
     private void SetMode(bool isDesign)
     {
         _isDesignMode = isDesign;
         StateHasChanged();
+    }
+
+    private async void HandleShortcut(string shortcut)
+    {
+        switch (shortcut)
+        {
+            case "Ctrl+1":
+                _isDesignMode = true;
+                await InvokeAsync(StateHasChanged);
+                break;
+            case "Ctrl+2":
+                _isDesignMode = false;
+                await InvokeAsync(StateHasChanged);
+                break;
+            case "Ctrl+S":
+                await AutoSave.SaveNowAsync();
+                break;
+            case "Ctrl+Z":
+                SchemaState.Undo();
+                break;
+            case "Ctrl+Y":
+                SchemaState.Redo();
+                break;
+        }
+    }
+
+    public void Dispose()
+    {
+        Keyboard.OnShortcut -= HandleShortcut;
     }
 }
