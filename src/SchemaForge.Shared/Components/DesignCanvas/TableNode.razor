@@ -1,5 +1,6 @@
 @using SchemaForge.Core.Models
 @using Microsoft.AspNetCore.Components
+@using System.Net
 
 <g class="sf-table-node @(IsSelected ? "selected" : "")"
    transform="translate(@Table.Position.X, @Table.Position.Y)">
@@ -28,10 +29,10 @@
           style="cursor: grab;" />
 
     @* Table name label *@
-    @((MarkupString)$@"<text x=""12"" y=""24"" class=""sf-table-name"" font-size=""13"" font-weight=""600"" fill=""#4A4A4A"" style=""cursor:pointer;"">{Table.Name}</text>")
+    @((MarkupString)$@"<text x=""12"" y=""24"" class=""sf-table-name"" font-size=""13"" font-weight=""600"" fill=""#4A4A4A"" style=""cursor:pointer;"">{WebUtility.HtmlEncode(Table.Name)}</text>")
 
     @* Column count badge *@
-    @((MarkupString)$@"<text x=""{Table.Position.Width - 12}"" y=""24"" font-size=""10"" fill=""#999"" text-anchor=""end"">{Table.Columns.Count}</text>")
+    @((MarkupString)$@"<text x=""{Table.Position.Width - 12}"" y=""24"" font-size=""10"" fill=""#999"" text-anchor=""end"">{WebUtility.HtmlEncode(Table.Columns.Count.ToString())}</text>")
 
     @* Columns *@
     @if (!Table.IsCollapsed)
@@ -65,10 +66,10 @@
                     var typeX = Table.Position.Width - 12;
                     var typeName = col.DataType.ToString().ToLowerInvariant();
                 }
-                @((MarkupString)$@"<text x=""{nameX}"" y=""14"" font-size=""12"" fill=""#4A4A4A"">{col.Name}</text>")
+                @((MarkupString)$@"<text x=""{nameX}"" y=""14"" font-size=""12"" fill=""#4A4A4A"">{WebUtility.HtmlEncode(col.Name)}</text>")
 
                 @* Data type *@
-                @((MarkupString)$@"<text x=""{typeX}"" y=""14"" font-size=""11"" fill=""#999"" text-anchor=""end"">{typeName}</text>")
+                @((MarkupString)$@"<text x=""{typeX}"" y=""14"" font-size=""11"" fill=""#999"" text-anchor=""end"">{WebUtility.HtmlEncode(typeName)}</text>")
 
                 @* Connection port (right) *@
                 <circle class="sf-port"
