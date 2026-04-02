@@ -1,3 +1,4 @@
+@page "/"
 @page "/home"
 @using SchemaForge.Core.SampleSchemas
 @inject IProjectStorageService Storage
@@ -88,7 +89,7 @@
     {
         SchemaState.LoadDocument(new SchemaDocument { Name = "Untitled Project" });
         QueryState.LoadState([], 0, []);
-        Nav.NavigateTo("/");
+        Nav.NavigateTo("/designer");
     }
 
     private async Task OpenProject(string projectId)
@@ -96,7 +97,7 @@
         var project = await Storage.LoadProjectAsync(projectId);
         SchemaState.LoadDocument(project.Schema);
         QueryState.LoadState(project.QueryTabs, project.ActiveQueryTabIndex, project.QueryHistory);
-        Nav.NavigateTo("/");
+        Nav.NavigateTo("/designer");
     }
 
     private async Task DeleteProject(string projectId)
@@ -110,7 +111,7 @@
         var schema = SampleSchemas.Get(key);
         SchemaState.LoadDocument(schema);
         QueryState.LoadState([], 0, []);
-        Nav.NavigateTo("/");
+        Nav.NavigateTo("/designer");
     }
 
     private record SampleInfo(string Key, string Name, string Description, int TableCount);
