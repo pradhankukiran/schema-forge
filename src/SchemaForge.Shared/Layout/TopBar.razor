@@ -10,11 +10,11 @@
     <div class="sf-topbar-left">
         <span class="sf-logo">SchemaForge</span>
     </div>
-    <div class="sf-topbar-center">
-        <button class="sf-mode-tab @(IsDesignMode ? "active" : "")" @onclick="() => IsDesignModeChanged.InvokeAsync(true)">
+    <div class="sf-topbar-center" role="tablist">
+        <button class="sf-mode-tab @(IsDesignMode ? "active" : "")" role="tab" aria-selected="@(IsDesignMode ? "true" : "false")" @onclick="() => IsDesignModeChanged.InvokeAsync(true)">
             Design
         </button>
-        <button class="sf-mode-tab @(!IsDesignMode ? "active" : "")" @onclick="() => IsDesignModeChanged.InvokeAsync(false)">
+        <button class="sf-mode-tab @(!IsDesignMode ? "active" : "")" role="tab" aria-selected="@(!IsDesignMode ? "true" : "false")" @onclick="() => IsDesignModeChanged.InvokeAsync(false)">
             Query
         </button>
     </div>
