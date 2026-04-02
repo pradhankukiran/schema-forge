@@ -18,6 +18,7 @@ public class MonacoEditorInterop : IAsyncDisposable
     public async Task InitializeAsync()
     {
         var module = await _moduleTask.Value;
+        _dotNetRef?.Dispose();
         _dotNetRef = DotNetObjectReference.Create(this);
         await module.InvokeAsync<bool>("initialize", _dotNetRef);
     }
