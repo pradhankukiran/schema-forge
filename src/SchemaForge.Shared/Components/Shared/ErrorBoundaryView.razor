@@ -1,0 +1,14 @@
+<div class="sf-error-boundary">
+    <div class="sf-error-icon">!</div>
+    <div class="sf-error-title">Something went wrong</div>
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <div class="sf-error-detail">@Message</div>
+    }
+    <button class="sf-btn sf-btn-sm" @onclick="OnRetry">Retry</button>
+</div>
+
+@code {
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+}
