@@ -1,7 +1,9 @@
 @if (Visible)
 {
-    <div class="sf-context-menu" style="left: @(X)px; top: @(Y)px;" @onfocusout="Hide" tabindex="-1">
-        @ChildContent
+    <div class="sf-context-overlay" @onclick="Hide" @onkeydown="OnKeyDown" tabindex="-1">
+        <div class="sf-context-menu" style="left: @(X)px; top: @(Y)px;" @onclick:stopPropagation="true">
+            @ChildContent
+        </div>
     </div>
 }
 
@@ -13,4 +15,9 @@
     [Parameter] public EventCallback OnClose { get; set; }
 
     private void Hide() => OnClose.InvokeAsync();
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") OnClose.InvokeAsync();
+    }
 }
