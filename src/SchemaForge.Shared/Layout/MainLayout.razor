@@ -2,9 +2,21 @@
 @inject SchemaState SchemaState
 
 <div class="sf-app">
-    <TopBar />
+    <TopBar IsDesignMode="@_isDesignMode" IsDesignModeChanged="SetMode" />
     <div class="sf-body">
-        @Body
+        <CascadingValue Value="@_isDesignMode" Name="IsDesignMode">
+            @Body
+        </CascadingValue>
     </div>
     <StatusBar />
 </div>
+
+@code {
+    private bool _isDesignMode = true;
+
+    private void SetMode(bool isDesign)
+    {
+        _isDesignMode = isDesign;
+        StateHasChanged();
+    }
+}
