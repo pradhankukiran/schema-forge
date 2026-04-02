@@ -83,7 +83,7 @@
     private bool _isExecuting;
     private QueryResult? _lastResult;
 
-    private string EditorElementId => $"monaco-editor-{QueryState.ActiveTabIndex}";
+    private string EditorElementId => $"monaco-editor-{QueryState.ActiveTab.Id}";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -135,10 +135,6 @@
         QueryState.SetActiveTab(index);
         _lastResult = QueryState.ActiveTab.LastResult;
         StateHasChanged();
-
-        // Wait for render, then create/switch editor
-        await Task.Delay(50);
-        await EnsureEditorCreated();
     }
 
     private void AddTab()
@@ -148,12 +144,8 @@
 
     private async Task CloseTab(int index)
     {
-        try
-        {
-            await Monaco.DisposeEditorAsync($"monaco-editor-{index}");
-        }
-        catch { /* might not exist */ }
-
+        var tabId = QueryState.Tabs[index].Id;
+        try { await Monaco.DisposeEditorAsync($"monaco-editor-{tabId}"); } catch { }
         QueryState.CloseTab(index);
         _lastResult = QueryState.ActiveTab.LastResult;
     }
@@ -234,9 +226,16 @@
 
     private async void OnSchemaChanged()
     {
-        if (_initialized)
+        try
         {
-            await UpdateCompletionItems();
+            if (_initialized)
+            {
+                await UpdateCompletionItems();
+            }
+        }
+        catch (Exception)
+        {
+            // Swallow JS interop exceptions during schema changes
         }
     }
 
