@@ -1,0 +1,76 @@
+/* SchemaForge Responsive Layout */
+
+/* Medium screens: collapse property panel */
+@media (max-width: 1280px) {
+    .sf-designer-props {
+        display: none;
+    }
+
+    .sf-designer-sidebar {
+        width: 200px;
+    }
+}
+
+/* Small screens: single panel mode */
+@media (max-width: 960px) {
+    .sf-designer {
+        flex-direction: column;
+    }
+
+    .sf-designer-sidebar {
+        display: none;
+    }
+
+    .sf-designer-props {
+        display: none;
+    }
+
+    .sf-topbar-right {
+        gap: 4px;
+    }
+
+    .sf-topbar-right .sf-dialect-selector {
+        display: none;
+    }
+
+    .sf-canvas-toolbar {
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+
+    .sf-small-screen-banner {
+        display: block;
+    }
+}
+
+/* Small screen banner - hidden by default */
+.sf-small-screen-banner {
+    display: none;
+    padding: 8px 16px;
+    background: #FFF8E1;
+    border-bottom: 1px solid #D9D9D9;
+    font-size: 11px;
+    color: #4A4A4A;
+    text-align: center;
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) and (pointer: coarse) {
+    .sf-btn {
+        min-height: 36px;
+        padding: 8px 14px;
+    }
+
+    .sf-btn-sm {
+        min-height: 32px;
+        padding: 6px 10px;
+    }
+
+    .sf-tree-item {
+        padding: 8px;
+    }
+
+    .sf-port {
+        r: 6;
+    }
+}
