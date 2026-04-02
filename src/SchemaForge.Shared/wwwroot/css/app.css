@@ -753,3 +753,36 @@ html, body {
     color: var(--sf-text-light);
     font-size: 12px;
 }
+
+/* Query History */
+.sf-history-item {
+    padding: 8px 12px;
+    border-bottom: 1px solid #F0F0F0;
+    cursor: pointer;
+}
+
+.sf-history-item:hover {
+    background: var(--sf-surface);
+}
+
+.sf-history-item.error {
+    border-left: 2px solid var(--sf-error);
+}
+
+.sf-history-sql {
+    font-family: var(--sf-font-mono);
+    font-size: 11px;
+    color: var(--sf-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.sf-history-meta {
+    font-size: 10px;
+    color: var(--sf-text-light);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
