@@ -14,3 +14,8 @@ export function downloadJson(filename, obj) {
     const json = JSON.stringify(obj, null, 2);
     downloadText(filename, json, "application/json");
 }
+
+export async function copyToClipboard(text) {
+    await navigator.clipboard.writeText(text);
+    return true;
+}
