@@ -3,6 +3,7 @@
 @inject SchemaState SchemaState
 @inject DdlGeneratorFactory DdlFactory
 @inject FileInterop FileExport
+@inject CanvasExportInterop CanvasExport
 
 <header class="sf-topbar">
     <div class="sf-topbar-left">
@@ -18,11 +19,13 @@
     </div>
     <div class="sf-topbar-right">
         <DialectSelector />
-        <button class="sf-btn sf-btn-sm" @onclick="() => _showImport = true">Import DDL</button>
-        <button class="sf-btn sf-btn-sm" @onclick="ExportSql"
-                disabled="@(SchemaState.Document.Tables.Count == 0)">
-            Export SQL
-        </button>
+        <button class="sf-btn sf-btn-sm" @onclick="() => _showImport = true">Import</button>
+        <DropdownMenu Label="Export">
+            <button class="sf-dropdown-item" @onclick="ExportSql">SQL (@FormatDialect(SchemaState.Document.TargetDialect))</button>
+            <div class="sf-dropdown-sep"></div>
+            <button class="sf-dropdown-item" @onclick="ExportPng">PNG (2x)</button>
+            <button class="sf-dropdown-item" @onclick="ExportSvg">SVG</button>
+        </DropdownMenu>
         <button class="sf-btn sf-btn-sm" @onclick="() => OnNavigateHome.InvokeAsync()">Home</button>
     </div>
 </header>
@@ -39,11 +42,31 @@
     private async Task ExportSql()
     {
         if (SchemaState.Document.Tables.Count == 0) return;
-
         var dialect = SchemaState.Document.TargetDialect;
         var generator = DdlFactory.GetGenerator(dialect);
         var ddl = generator.GenerateFullDdl(SchemaState.Document);
         var filename = $"{SchemaState.Document.Name.Replace(" ", "_").ToLowerInvariant()}_{dialect.ToString().ToLowerInvariant()}.sql";
         await FileExport.DownloadSqlAsync(filename, ddl);
     }
+
+    private async Task ExportPng()
+    {
+        var name = SchemaState.Document.Name.Replace(" ", "_").ToLowerInvariant();
+        await CanvasExport.DownloadPngAsync($"{name}.png");
+    }
+
+    private async Task ExportSvg()
+    {
+        var name = SchemaState.Document.Name.Replace(" ", "_").ToLowerInvariant();
+        await CanvasExport.DownloadSvgAsync($"{name}.svg");
+    }
+
+    private static string FormatDialect(SqlDialect d) => d switch
+    {
+        SqlDialect.SQLite => "SQLite",
+        SqlDialect.PostgreSQL => "PostgreSQL",
+        SqlDialect.MySQL => "MySQL",
+        SqlDialect.SqlServer => "SQL Server",
+        _ => d.ToString()
+    };
 }
