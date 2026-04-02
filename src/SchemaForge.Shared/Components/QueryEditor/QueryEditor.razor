@@ -1,0 +1,263 @@
+@using SchemaForge.Shared.Interop
+@inject MonacoEditorInterop Monaco
+@inject ISqlExecutionService SqlEngine
+@inject SchemaState SchemaState
+@inject QueryState QueryState
+@implements IAsyncDisposable
+@implements IDisposable
+
+<div class="sf-query-editor">
+    <div class="sf-query-tabs">
+        @for (var i = 0; i < QueryState.Tabs.Count; i++)
+        {
+            var index = i;
+            var tab = QueryState.Tabs[i];
+            <button class="sf-query-tab @(index == QueryState.ActiveTabIndex ? "active" : "")"
+                    @onclick="() => SwitchTab(index)">
+                <span>@tab.Title</span>
+                @if (QueryState.Tabs.Count > 1)
+                {
+                    <span class="sf-tab-close" @onclick="() => CloseTab(index)" @onclick:stopPropagation="true">x</span>
+                }
+            </button>
+        }
+        @if (QueryState.Tabs.Count < 20)
+        {
+            <button class="sf-query-tab sf-tab-add" @onclick="AddTab">+</button>
+        }
+    </div>
+
+    <div class="sf-query-editor-area">
+        <div id="@EditorElementId" class="sf-monaco-container"></div>
+    </div>
+
+    <div class="sf-query-actions">
+        <button class="sf-btn sf-btn-execute" @onclick="ExecuteQuery" disabled="@_isExecuting">
+            @(_isExecuting ? "Running..." : "Execute (F5)")
+        </button>
+        <button class="sf-btn" @onclick="ApplySchema">Apply Schema</button>
+        @if (_lastResult != null)
+        {
+            <span class="sf-query-status">
+                @if (_lastResult.Success)
+                {
+                    <span class="sf-status-success">@_lastResult.Rows.Length rows in @(_lastResult.ExecutionTimeMs.ToString("F1"))ms</span>
+                }
+                else
+                {
+                    <span class="sf-status-error">Error</span>
+                }
+            </span>
+        }
+    </div>
+
+    <div class="sf-query-results">
+        @if (_lastResult != null)
+        {
+            @if (!_lastResult.Success)
+            {
+                <div class="sf-error-banner">@_lastResult.ErrorMessage</div>
+            }
+            else if (_lastResult.Columns.Length > 0)
+            {
+                <ResultsGrid Result="_lastResult" />
+            }
+            else if (_lastResult.RowsAffected > 0)
+            {
+                <div class="sf-results-message">@_lastResult.RowsAffected row(s) affected</div>
+            }
+            else
+            {
+                <div class="sf-results-message">Query executed successfully.</div>
+            }
+        }
+        else
+        {
+            <div class="sf-results-empty">Execute a query to see results here.</div>
+        }
+    </div>
+</div>
+
+@code {
+    private bool _initialized;
+    private bool _isExecuting;
+    private QueryResult? _lastResult;
+
+    private string EditorElementId => $"monaco-editor-{QueryState.ActiveTabIndex}";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Monaco.InitializeAsync();
+
+            if (!SqlEngine.IsInitialized)
+                await SqlEngine.InitializeAsync();
+
+            Monaco.OnExecuteRequested += OnMonacoExecute;
+            SchemaState.OnChange += OnSchemaChanged;
+            QueryState.OnChange += StateHasChanged;
+
+            _initialized = true;
+        }
+
+        if (_initialized)
+        {
+            await EnsureEditorCreated();
+            await UpdateCompletionItems();
+        }
+    }
+
+    private async Task EnsureEditorCreated()
+    {
+        try
+        {
+            var existing = await Monaco.GetValueAsync(EditorElementId);
+            // Editor already exists
+        }
+        catch
+        {
+            // Editor doesn't exist, create it
+            await Monaco.CreateEditorAsync(EditorElementId, QueryState.ActiveTab.SqlContent);
+        }
+    }
+
+    private async Task SwitchTab(int index)
+    {
+        // Save current tab content
+        try
+        {
+            var content = await Monaco.GetValueAsync(EditorElementId);
+            QueryState.UpdateTabContent(QueryState.ActiveTabIndex, content);
+        }
+        catch { /* editor may not exist */ }
+
+        QueryState.SetActiveTab(index);
+        _lastResult = QueryState.ActiveTab.LastResult;
+        StateHasChanged();
+
+        // Wait for render, then create/switch editor
+        await Task.Delay(50);
+        await EnsureEditorCreated();
+    }
+
+    private void AddTab()
+    {
+        QueryState.AddTab();
+    }
+
+    private async Task CloseTab(int index)
+    {
+        try
+        {
+            await Monaco.DisposeEditorAsync($"monaco-editor-{index}");
+        }
+        catch { /* might not exist */ }
+
+        QueryState.CloseTab(index);
+        _lastResult = QueryState.ActiveTab.LastResult;
+    }
+
+    private async Task ExecuteQuery()
+    {
+        _isExecuting = true;
+        StateHasChanged();
+
+        try
+        {
+            var sql = await Monaco.GetValueAsync(EditorElementId);
+            var selected = await Monaco.GetSelectedTextAsync(EditorElementId);
+            var queryToRun = string.IsNullOrWhiteSpace(selected) ? sql : selected;
+
+            if (string.IsNullOrWhiteSpace(queryToRun))
+            {
+                _isExecuting = false;
+                return;
+            }
+
+            // Save content
+            QueryState.UpdateTabContent(QueryState.ActiveTabIndex, sql);
+
+            var result = await SqlEngine.ExecuteAsync(queryToRun);
+            _lastResult = result;
+            QueryState.UpdateTabResult(QueryState.ActiveTabIndex, result);
+
+            // Add to history
+            QueryState.AddHistoryEntry(new QueryHistoryEntry
+            {
+                Sql = queryToRun,
+                ExecutedAt = DateTime.UtcNow,
+                ExecutionTimeMs = result.ExecutionTimeMs,
+                RowCount = result.Rows.Length,
+                Success = result.Success,
+                ErrorMessage = result.ErrorMessage
+            });
+        }
+        catch (Exception ex)
+        {
+            _lastResult = new QueryResult
+            {
+                Success = false,
+                ErrorMessage = ex.Message,
+                ExecutionTimeMs = 0
+            };
+        }
+        finally
+        {
+            _isExecuting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnMonacoExecute(string editorId, string sql)
+    {
+        if (editorId == EditorElementId)
+        {
+            await ExecuteQuery();
+        }
+    }
+
+    private async Task ApplySchema()
+    {
+        var generator = new SchemaForge.Core.DdlGeneration.SqliteDdlGenerator();
+        var ddl = generator.GenerateFullDdl(SchemaState.Document);
+
+        if (string.IsNullOrWhiteSpace(ddl) || SchemaState.Document.Tables.Count == 0)
+            return;
+
+        // Reset and recreate
+        await SqlEngine.ResetAsync();
+        var result = await SqlEngine.ExecuteAsync(ddl);
+        _lastResult = result;
+        StateHasChanged();
+    }
+
+    private async void OnSchemaChanged()
+    {
+        if (_initialized)
+        {
+            await UpdateCompletionItems();
+        }
+    }
+
+    private async Task UpdateCompletionItems()
+    {
+        var tableNames = SchemaState.Document.Tables.Select(t => t.Name).ToArray();
+        var tableColumns = SchemaState.Document.Tables.ToDictionary(
+            t => t.Name,
+            t => t.Columns.Select(c => c.Name).ToArray());
+
+        await Monaco.SetCompletionItemsAsync(tableNames, tableColumns);
+    }
+
+    public void Dispose()
+    {
+        SchemaState.OnChange -= OnSchemaChanged;
+        QueryState.OnChange -= StateHasChanged;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Monaco.OnExecuteRequested -= OnMonacoExecute;
+    }
+}

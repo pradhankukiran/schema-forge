@@ -1,0 +1,44 @@
+@using SchemaForge.Core.Models
+
+<div class="sf-results-grid-wrapper">
+    <table class="sf-results-grid">
+        <thead>
+            <tr>
+                <th class="sf-row-num">#</th>
+                @foreach (var col in Result.Columns)
+                {
+                    <th>@col</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var rowNum = 0;
+            }
+            @foreach (var row in Result.Rows)
+            {
+                rowNum++;
+                <tr>
+                    <td class="sf-row-num">@rowNum</td>
+                    @foreach (var cell in row)
+                    {
+                        <td>
+                            @if (cell == null)
+                            {
+                                <span class="sf-null">NULL</span>
+                            }
+                            else
+                            {
+                                @cell.ToString()
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public QueryResult Result { get; set; } = default!;
+}
