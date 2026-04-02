@@ -1,6 +1,20 @@
 @using SchemaForge.Core.Models
+@using SchemaForge.Core.Services
+@inject SchemaForge.Shared.Interop.FileInterop FileExport
 
 <div class="sf-results-grid-wrapper">
+    <div class="sf-results-action-bar">
+        <button class="sf-btn sf-btn-sm" @onclick="CopyCsv" title="Copy as CSV to clipboard">
+            Copy CSV
+        </button>
+        <button class="sf-btn sf-btn-sm" @onclick="DownloadCsv" title="Download as CSV file">
+            Download CSV
+        </button>
+        <button class="sf-btn sf-btn-sm" @onclick="CopyInsert" title="Copy as INSERT statements to clipboard">
+            Copy as INSERT
+        </button>
+    </div>
+
     <table class="sf-results-grid">
         <thead>
             <tr>
@@ -41,4 +55,23 @@
 
 @code {
     [Parameter, EditorRequired] public QueryResult Result { get; set; } = default!;
+    [Parameter] public string TableName { get; set; } = "table";
+
+    private async Task CopyCsv()
+    {
+        var csv = CsvExporter.ToCsv(Result);
+        await FileExport.CopyToClipboardAsync(csv);
+    }
+
+    private async Task DownloadCsv()
+    {
+        var csv = CsvExporter.ToCsv(Result);
+        await FileExport.DownloadCsvAsync($"query_results_{DateTime.Now:yyyyMMdd_HHmmss}.csv", csv);
+    }
+
+    private async Task CopyInsert()
+    {
+        var sql = CsvExporter.ToInsertStatements(Result, TableName);
+        await FileExport.CopyToClipboardAsync(sql);
+    }
 }
