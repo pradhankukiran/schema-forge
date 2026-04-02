@@ -67,13 +67,14 @@ public class PostgresDdlGenerator : IDdlGeneratorService
 
         var lines = new List<string>();
 
+        var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
+
         foreach (var col in table.Columns)
         {
-            lines.Add($"  {GenerateColumnDef(col)}");
+            lines.Add($"  {GenerateColumnDef(col, pkColumns.Count == 1 && col.IsPrimaryKey)}");
         }
 
         // Composite primary key
-        var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
         if (pkColumns.Count > 1)
         {
             var pkNames = string.Join(", ", pkColumns.Select(c => QuoteId(c.Name)));
@@ -169,11 +170,11 @@ public class PostgresDdlGenerator : IDdlGeneratorService
         return sb.ToString().TrimEnd();
     }
 
-    private string GenerateColumnDef(ColumnDefinition col)
+    private string GenerateColumnDef(ColumnDefinition col, bool isSolePk)
     {
         var parts = new List<string>();
 
-        if (col.IsPrimaryKey && col.IsAutoIncrement)
+        if (isSolePk && col.IsAutoIncrement)
         {
             // Use GENERATED ALWAYS AS IDENTITY for auto-increment PKs
             parts.Add(QuoteId(col.Name));
@@ -186,9 +187,8 @@ public class PostgresDdlGenerator : IDdlGeneratorService
             parts.Add(QuoteId(col.Name));
             parts.Add(MapDataType(col));
 
-            if (col.IsPrimaryKey)
+            if (isSolePk)
             {
-                // Only add inline PK for single-column PKs (composite handled at table level)
                 parts.Add("PRIMARY KEY");
             }
         }
