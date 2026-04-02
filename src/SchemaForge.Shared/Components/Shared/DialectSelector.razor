@@ -1,0 +1,30 @@
+@inject SchemaState SchemaState
+
+<div class="sf-dialect-selector">
+    <label class="sf-label">Target Dialect</label>
+    <select class="sf-select" value="@SchemaState.Document.TargetDialect" @onchange="OnDialectChange">
+        @foreach (var dialect in Enum.GetValues<SqlDialect>())
+        {
+            <option value="@dialect">@FormatDialect(dialect)</option>
+        }
+    </select>
+</div>
+
+@code {
+    private void OnDialectChange(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<SqlDialect>(e.Value?.ToString(), out var dialect))
+        {
+            SchemaState.Dispatch(new UpdateDialectAction(dialect));
+        }
+    }
+
+    private static string FormatDialect(SqlDialect d) => d switch
+    {
+        SqlDialect.SQLite => "SQLite",
+        SqlDialect.PostgreSQL => "PostgreSQL",
+        SqlDialect.MySQL => "MySQL",
+        SqlDialect.SqlServer => "SQL Server",
+        _ => d.ToString()
+    };
+}
