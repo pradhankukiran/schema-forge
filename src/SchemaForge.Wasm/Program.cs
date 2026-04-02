@@ -14,8 +14,11 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddSingleton<SchemaState>();
 builder.Services.AddSingleton<QueryState>();
 
-// DDL Generation
+// DDL Generation (all 4 dialects)
 builder.Services.AddSingleton<IDdlGeneratorService, SqliteDdlGenerator>();
+builder.Services.AddSingleton<IDdlGeneratorService, PostgresDdlGenerator>();
+builder.Services.AddSingleton<IDdlGeneratorService, MySqlDdlGenerator>();
+builder.Services.AddSingleton<IDdlGeneratorService, SqlServerDdlGenerator>();
 builder.Services.AddSingleton<DdlGeneratorFactory>(sp =>
     new DdlGeneratorFactory(sp.GetServices<IDdlGeneratorService>()));
 
