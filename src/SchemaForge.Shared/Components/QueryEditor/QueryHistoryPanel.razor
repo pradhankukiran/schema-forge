@@ -1,0 +1,57 @@
+@inject QueryState QueryState
+@implements IDisposable
+
+<aside class="sf-property-panel">
+    <div class="sf-panel-header">
+        <span>Query History</span>
+        <span class="sf-tree-badge">@QueryState.History.Count</span>
+    </div>
+
+    <div class="sf-panel-body">
+        @if (QueryState.History.Count == 0)
+        {
+            <div class="sf-panel-empty">No queries executed yet.</div>
+        }
+        else
+        {
+            @foreach (var entry in QueryState.History)
+            {
+                <div class="sf-history-item @(entry.Success ? "" : "error")" @key="entry.Id">
+                    <div class="sf-history-sql">@Truncate(entry.Sql, 80)</div>
+                    <div class="sf-history-meta">
+                        @if (entry.Success)
+                        {
+                            <span class="sf-status-success">@entry.RowCount rows</span>
+                        }
+                        else
+                        {
+                            <span class="sf-status-error">Error</span>
+                        }
+                        <span class="sf-sep">|</span>
+                        <span>@entry.ExecutionTimeMs.ToString("F1")ms</span>
+                        <span class="sf-sep">|</span>
+                        <span>@entry.ExecutedAt.ToString("HH:mm:ss")</span>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</aside>
+
+@code {
+    protected override void OnInitialized()
+    {
+        QueryState.OnChange += StateHasChanged;
+    }
+
+    private static string Truncate(string text, int maxLen)
+    {
+        var singleLine = text.ReplaceLineEndings(" ");
+        return singleLine.Length > maxLen ? singleLine[..maxLen] + "..." : singleLine;
+    }
+
+    public void Dispose()
+    {
+        QueryState.OnChange -= StateHasChanged;
+    }
+}
