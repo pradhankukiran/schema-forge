@@ -1,3 +1,4 @@
+@using SchemaForge.Core.Layout
 @inject SchemaState SchemaState
 @inject IJSRuntime JS
 @implements IDisposable
@@ -5,6 +6,9 @@
 <div class="sf-canvas-container" @ref="_containerRef">
     <div class="sf-canvas-toolbar">
         <button class="sf-btn sf-btn-sm" @onclick="AddTable" title="Add Table (Ctrl+T)">+ Table</button>
+        <span class="sf-toolbar-sep"></span>
+        <button class="sf-btn sf-btn-sm" @onclick="AutoLayoutForce" title="Auto Layout (Force)">Layout</button>
+        <button class="sf-btn sf-btn-sm" @onclick="AutoLayoutHierarchical" title="Auto Layout (Hierarchical)">Tree</button>
         <span class="sf-toolbar-sep"></span>
         <button class="sf-btn sf-btn-sm" @onclick="ZoomOut" title="Zoom Out">-</button>
         <span class="sf-zoom-label">@((int)(_zoom * 100))%</span>
@@ -266,6 +270,29 @@
         _zoom = Math.Clamp(_zoom, 0.25, 4.0);
         _panX = minX;
         _panY = minY;
+    }
+
+    private void AutoLayoutForce()
+    {
+        if (SchemaState.Document.Tables.Count == 0) return;
+        var positions = ForceDirectedLayout.Compute(SchemaState.Document);
+        ApplyLayout(positions);
+    }
+
+    private void AutoLayoutHierarchical()
+    {
+        if (SchemaState.Document.Tables.Count == 0) return;
+        var positions = HierarchicalLayout.Compute(SchemaState.Document);
+        ApplyLayout(positions);
+    }
+
+    private void ApplyLayout(Dictionary<string, (double X, double Y)> positions)
+    {
+        var actions = positions
+            .Select(p => (ISchemaAction)new MoveTableAction(p.Key, SnapToGrid(p.Value.X), SnapToGrid(p.Value.Y)))
+            .ToList();
+        SchemaState.Dispatch(new CompoundAction(actions));
+        ZoomFit();
     }
 
     private double SnapToGrid(double value)
