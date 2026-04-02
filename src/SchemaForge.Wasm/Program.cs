@@ -22,5 +22,6 @@ builder.Services.AddSingleton<DdlGeneratorFactory>(sp =>
 // JS Interop Services
 builder.Services.AddSingleton<MonacoEditorInterop>();
 builder.Services.AddSingleton<ISqlExecutionService, SqlJsInterop>();
+builder.Services.AddSingleton<IProjectStorageService, IndexedDbStorageService>();
 
 await builder.Build().RunAsync();
