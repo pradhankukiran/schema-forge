@@ -5,13 +5,12 @@
 @implements IDisposable
 
 <div class="sf-designer">
-    @{ _isDesignMode = IsDesignMode; }
     <div class="sf-designer-sidebar">
         <SchemaExplorer SelectedTableId="@_selectedTableId" OnTableClick="OnExplorerTableClick" />
     </div>
 
     <div class="sf-designer-main">
-        @if (_isDesignMode)
+        @if (IsDesignMode)
         {
             <DesignCanvas OnTableSelected="OnTableSelected" />
 
@@ -33,7 +32,7 @@
     </div>
 
     <div class="sf-designer-props">
-        @if (_isDesignMode)
+        @if (IsDesignMode)
         {
             <PropertyPanel Table="@SelectedTable" />
         }
@@ -47,7 +46,6 @@
 @code {
     [CascadingParameter(Name = "IsDesignMode")] public bool IsDesignMode { get; set; } = true;
 
-    private bool _isDesignMode = true;
     private bool _showDdl;
     private string? _selectedTableId;
 
