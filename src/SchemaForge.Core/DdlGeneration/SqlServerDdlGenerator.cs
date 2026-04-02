@@ -54,13 +54,14 @@ public class SqlServerDdlGenerator : IDdlGeneratorService
 
         var lines = new List<string>();
 
+        var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
+
         foreach (var col in table.Columns)
         {
-            lines.Add($"  {GenerateColumnDef(col)}");
+            lines.Add($"  {GenerateColumnDef(col, pkColumns.Count == 1 && col.IsPrimaryKey)}");
         }
 
         // Composite primary key
-        var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
         if (pkColumns.Count > 1)
         {
             var pkNames = string.Join(", ", pkColumns.Select(c => $"[{c.Name}]"));
@@ -130,16 +131,16 @@ public class SqlServerDdlGenerator : IDdlGeneratorService
         }
     }
 
-    private string GenerateColumnDef(ColumnDefinition col)
+    private string GenerateColumnDef(ColumnDefinition col, bool isSolePk)
     {
         var parts = new List<string> { $"[{col.Name}]", MapDataType(col) };
 
         // Single-column PK with identity
-        if (col.IsPrimaryKey && col.IsAutoIncrement)
+        if (isSolePk && col.IsAutoIncrement)
         {
             parts.Add("IDENTITY(1,1) PRIMARY KEY");
         }
-        else if (col.IsPrimaryKey)
+        else if (isSolePk)
         {
             parts.Add("PRIMARY KEY");
         }

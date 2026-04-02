@@ -8,6 +8,9 @@ public class PostgresDdlGenerator : IDdlGeneratorService
 {
     public SqlDialect Dialect => SqlDialect.PostgreSQL;
 
+    private static string QuoteId(string name) => $"\"{name.Replace("\"", "\"\"")}\"";
+
+
     public string GenerateFullDdl(SchemaDocument schema)
     {
         var sb = new StringBuilder();
@@ -60,7 +63,7 @@ public class PostgresDdlGenerator : IDdlGeneratorService
     public string GenerateCreateTable(TableDefinition table, SchemaDocument schema)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"CREATE TABLE \"{table.Name}\" (");
+        sb.AppendLine($"CREATE TABLE {QuoteId(table.Name)} (");
 
         var lines = new List<string>();
 
@@ -73,14 +76,14 @@ public class PostgresDdlGenerator : IDdlGeneratorService
         var pkColumns = table.Columns.Where(c => c.IsPrimaryKey).ToList();
         if (pkColumns.Count > 1)
         {
-            var pkNames = string.Join(", ", pkColumns.Select(c => $"\"{c.Name}\""));
+            var pkNames = string.Join(", ", pkColumns.Select(c => QuoteId(c.Name)));
             lines.Add($"  PRIMARY KEY ({pkNames})");
         }
 
         // Check constraints
         foreach (var check in table.CheckConstraints)
         {
-            var name = string.IsNullOrEmpty(check.Name) ? "" : $"CONSTRAINT \"{check.Name}\" ";
+            var name = string.IsNullOrEmpty(check.Name) ? "" : $"CONSTRAINT {QuoteId(check.Name)} ";
             lines.Add($"  {name}CHECK ({check.Expression})");
         }
 
@@ -96,9 +99,9 @@ public class PostgresDdlGenerator : IDdlGeneratorService
         var columns = index.ColumnIds
             .Select(id => table.Columns.FirstOrDefault(c => c.Id == id))
             .Where(c => c != null)
-            .Select(c => $"\"{c!.Name}\"");
+            .Select(c => QuoteId(c!.Name));
 
-        var sql = $"CREATE {unique}INDEX \"{index.Name}\" ON \"{table.Name}\" ({string.Join(", ", columns)})";
+        var sql = $"CREATE {unique}INDEX {QuoteId(index.Name)} ON {QuoteId(table.Name)} ({string.Join(", ", columns)})";
 
         if (!string.IsNullOrEmpty(index.WhereClause))
             sql += $" WHERE {index.WhereClause}";
@@ -107,7 +110,7 @@ public class PostgresDdlGenerator : IDdlGeneratorService
     }
 
     public string GenerateDropTable(string tableName) =>
-        $"DROP TABLE IF EXISTS \"{tableName}\" CASCADE;";
+        $"DROP TABLE IF EXISTS {QuoteId(tableName)} CASCADE;";
 
     private string GenerateForeignKeyConstraints(TableDefinition table, SchemaDocument schema)
     {
@@ -129,8 +132,8 @@ public class PostgresDdlGenerator : IDdlGeneratorService
                 ? rel.Name
                 : $"fk_{table.Name}_{sourceCol.Name}";
 
-            var stmt = $"ALTER TABLE \"{table.Name}\" ADD CONSTRAINT \"{constraintName}\" " +
-                       $"FOREIGN KEY (\"{sourceCol.Name}\") REFERENCES \"{targetTable.Name}\" (\"{targetCol.Name}\")";
+            var stmt = $"ALTER TABLE {QuoteId(table.Name)} ADD CONSTRAINT {QuoteId(constraintName)} " +
+                       $"FOREIGN KEY ({QuoteId(sourceCol.Name)}) REFERENCES {QuoteId(targetTable.Name)} ({QuoteId(targetCol.Name)})";
 
             if (rel.OnDelete != ReferentialAction.NoAction)
                 stmt += $" ON DELETE {FormatReferentialAction(rel.OnDelete)}";
@@ -151,14 +154,14 @@ public class PostgresDdlGenerator : IDdlGeneratorService
         {
             if (!string.IsNullOrEmpty(table.Comment))
             {
-                sb.AppendLine($"COMMENT ON TABLE \"{table.Name}\" IS '{EscapeSqlString(table.Comment)}';");
+                sb.AppendLine($"COMMENT ON TABLE {QuoteId(table.Name)} IS '{EscapeSqlString(table.Comment)}';");
             }
 
             foreach (var col in table.Columns)
             {
                 if (!string.IsNullOrEmpty(col.Comment))
                 {
-                    sb.AppendLine($"COMMENT ON COLUMN \"{table.Name}\".\"{col.Name}\" IS '{EscapeSqlString(col.Comment)}';");
+                    sb.AppendLine($"COMMENT ON COLUMN {QuoteId(table.Name)}.{QuoteId(col.Name)} IS '{EscapeSqlString(col.Comment)}';");
                 }
             }
         }
@@ -173,14 +176,14 @@ public class PostgresDdlGenerator : IDdlGeneratorService
         if (col.IsPrimaryKey && col.IsAutoIncrement)
         {
             // Use GENERATED ALWAYS AS IDENTITY for auto-increment PKs
-            parts.Add($"\"{col.Name}\"");
+            parts.Add(QuoteId(col.Name));
             parts.Add(MapDataType(col));
             parts.Add("GENERATED ALWAYS AS IDENTITY");
             parts.Add("PRIMARY KEY");
         }
         else
         {
-            parts.Add($"\"{col.Name}\"");
+            parts.Add(QuoteId(col.Name));
             parts.Add(MapDataType(col));
 
             if (col.IsPrimaryKey)
