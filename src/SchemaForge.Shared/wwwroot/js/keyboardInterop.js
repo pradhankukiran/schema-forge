@@ -37,7 +37,7 @@ function handleKeyDown(e) {
         e.key.toUpperCase()
     ].filter(Boolean).join("+");
 
-    dotNetRef.invokeMethodAsync("OnShortcut", shortcut);
+    dotNetRef.invokeMethodAsync("OnShortcut_Internal", shortcut);
 }
 
 export function dispose() {
