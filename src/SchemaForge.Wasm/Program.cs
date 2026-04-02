@@ -19,6 +19,9 @@ builder.Services.AddSingleton<IDdlGeneratorService, SqliteDdlGenerator>();
 builder.Services.AddSingleton<DdlGeneratorFactory>(sp =>
     new DdlGeneratorFactory(sp.GetServices<IDdlGeneratorService>()));
 
+// App Services
+builder.Services.AddSingleton<SchemaForge.Shared.Services.AutoSaveService>();
+
 // JS Interop Services
 builder.Services.AddSingleton<MonacoEditorInterop>();
 builder.Services.AddSingleton<ISqlExecutionService, SqlJsInterop>();

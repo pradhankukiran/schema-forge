@@ -441,6 +441,10 @@ html, body {
     color: var(--sf-border);
 }
 
+.sf-unsaved {
+    color: var(--sf-warning);
+}
+
 /* Buttons */
 .sf-btn {
     padding: 6px 12px;

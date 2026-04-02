@@ -1,10 +1,14 @@
+@using SchemaForge.Shared.Services
 @inject SchemaState SchemaState
+@inject AutoSaveService AutoSave
 @implements IDisposable
 
 <footer class="sf-statusbar">
     <div class="sf-statusbar-left">
         <span class="sf-status-dot"></span>
         <span>SQLite Ready</span>
+        <span class="sf-sep">|</span>
+        <span class="@(AutoSave.SaveStatus == "Saved" ? "" : "sf-unsaved")">@AutoSave.SaveStatus</span>
     </div>
     <div class="sf-statusbar-center">
         <span>@SchemaState.Document.Tables.Count tables</span>
@@ -22,6 +26,7 @@
     protected override void OnInitialized()
     {
         SchemaState.OnChange += StateHasChanged;
+        AutoSave.OnSaveStatusChanged += _ => InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
