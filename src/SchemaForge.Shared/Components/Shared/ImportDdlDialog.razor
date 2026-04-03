@@ -13,6 +13,13 @@
                 <p class="sf-modal-hint">Paste CREATE TABLE / ALTER TABLE SQL statements below.</p>
                 <textarea class="sf-textarea" rows="12" @bind="_ddlText" placeholder="CREATE TABLE users (&#10;  id INTEGER PRIMARY KEY,&#10;  name VARCHAR(100) NOT NULL&#10;);"></textarea>
 
+                @if (_showWarning)
+                {
+                    <div class="sf-warning-banner">
+                        This will replace your current schema (@SchemaState.Document.Tables.Count tables). This cannot be undone.
+                    </div>
+                }
+
                 @if (!string.IsNullOrEmpty(_error))
                 {
                     <div class="sf-error-banner">@_error</div>
@@ -35,10 +42,17 @@
 
     private string _ddlText = "";
     private string? _error;
+    private bool _showWarning;
 
     private void Import()
     {
         _error = null;
+        if (SchemaState.Document.Tables.Count > 0 && !_showWarning)
+        {
+            _showWarning = true;
+            return;
+        }
+        _showWarning = false;
         try
         {
             var parsed = DdlParser.Parse(_ddlText);
@@ -61,6 +75,7 @@
     private void Close()
     {
         _error = null;
+        _showWarning = false;
         OnClose.InvokeAsync();
     }
 }
