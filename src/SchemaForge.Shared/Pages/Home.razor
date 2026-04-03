@@ -5,6 +5,7 @@
 @inject SchemaState SchemaState
 @inject QueryState QueryState
 @inject NavigationManager Nav
+@inject SchemaForge.Shared.Services.ProjectContext ProjectContext
 
 <div class="sf-home">
     <div class="sf-home-header">
@@ -91,6 +92,7 @@
 
     private void CreateNewProject()
     {
+        ProjectContext.ProjectId = Guid.NewGuid().ToString();
         SchemaState.LoadDocument(new SchemaDocument { Name = "Untitled Project" });
         QueryState.LoadState([], 0, []);
         Nav.NavigateTo("/designer");
@@ -99,6 +101,7 @@
     private async Task OpenProject(string projectId)
     {
         var project = await Storage.LoadProjectAsync(projectId);
+        ProjectContext.ProjectId = project.Id;
         SchemaState.LoadDocument(project.Schema);
         QueryState.LoadState(project.QueryTabs, project.ActiveQueryTabIndex, project.QueryHistory);
         Nav.NavigateTo("/designer");
@@ -126,6 +129,7 @@
 
     private void LoadSample(string key)
     {
+        ProjectContext.ProjectId = Guid.NewGuid().ToString();
         var schema = SampleSchemas.Get(key);
         SchemaState.LoadDocument(schema);
         QueryState.LoadState([], 0, []);
