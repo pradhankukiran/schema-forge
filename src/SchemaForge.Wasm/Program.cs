@@ -23,6 +23,7 @@ builder.Services.AddSingleton<DdlGeneratorFactory>(sp =>
     new DdlGeneratorFactory(sp.GetServices<IDdlGeneratorService>()));
 
 // App Services
+builder.Services.AddSingleton<SchemaForge.Shared.Services.ProjectContext>();
 builder.Services.AddSingleton<SchemaForge.Shared.Services.AutoSaveService>();
 
 // JS Interop Services
