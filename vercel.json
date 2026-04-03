@@ -1,7 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "dotnet publish src/SchemaForge.Wasm/SchemaForge.Wasm.csproj -c Release -o output --nologo",
+  "installCommand": "bash ./scripts/vercel-install-dotnet.sh",
+  "buildCommand": "bash ./scripts/vercel-build.sh",
   "outputDirectory": "output/wwwroot",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }

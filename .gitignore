@@ -41,6 +41,7 @@ msbuild.wrn
 ## Vercel
 output/
 .vercel/
+.vercel-tools/
 
 ## OS
 .DS_Store
