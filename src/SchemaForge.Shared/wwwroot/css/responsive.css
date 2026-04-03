@@ -74,3 +74,9 @@
         r: 6;
     }
 }
+
+@media (max-width: 640px) {
+    .sf-modal {
+        width: 92vw;
+    }
+}
