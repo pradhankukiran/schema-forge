@@ -27,6 +27,14 @@
         }
     </div>
 
+    @if (!_schemaApplied)
+    {
+        <div class="sf-apply-banner">
+            <span>Schema has not been applied to the SQL sandbox.</span>
+            <button class="sf-btn sf-btn-primary sf-btn-sm" @onclick="ApplySchema">Apply Schema Now</button>
+        </div>
+    }
+
     <div class="sf-query-editor-area">
         <div id="@EditorElementId" class="sf-monaco-container"></div>
     </div>
@@ -52,7 +60,11 @@
     </div>
 
     <div class="sf-query-results">
-        @if (_lastResult != null)
+        @if (!string.IsNullOrEmpty(_applyMessage))
+        {
+            <div class="sf-results-message" style="color: var(--sf-success); font-weight: 500;">@_applyMessage</div>
+        }
+        else if (_lastResult != null)
         {
             @if (!_lastResult.Success)
             {
@@ -81,6 +93,8 @@
 @code {
     private bool _initialized;
     private bool _isExecuting;
+    private bool _schemaApplied;
+    private string? _applyMessage;
     private QueryResult? _lastResult;
 
     private string EditorElementId => $"monaco-editor-{QueryState.ActiveTab.Id}";
@@ -153,6 +167,7 @@
     private async Task ExecuteQuery()
     {
         _isExecuting = true;
+        _applyMessage = null;
         StateHasChanged();
 
         try
@@ -211,6 +226,7 @@
 
     private async Task ApplySchema()
     {
+        // Sandbox always uses SQLite regardless of the selected DDL dialect
         var generator = new SchemaForge.Core.DdlGeneration.SqliteDdlGenerator();
         var ddl = generator.GenerateFullDdl(SchemaState.Document);
 
@@ -220,7 +236,20 @@
         // Reset and recreate
         await SqlEngine.ResetAsync();
         var result = await SqlEngine.ExecuteAsync(ddl);
-        _lastResult = result;
+
+        if (result.Success)
+        {
+            _schemaApplied = true;
+            var tableCount = SchemaState.Document.Tables.Count;
+            _applyMessage = $"Schema applied - {tableCount} tables created";
+            _lastResult = null;
+        }
+        else
+        {
+            _applyMessage = null;
+            _lastResult = result;
+        }
+
         StateHasChanged();
     }
 
