@@ -1,0 +1,21 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">SchemaForge mark</title>
+  <desc id="desc">Geometric SchemaForge logo mark.</desc>
+  <defs>
+    <linearGradient id="teal" x1="18" y1="18" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#2D9A91"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="70" y1="18" x2="110" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C7781F"/>
+      <stop offset="1" stop-color="#E39A3D"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="#FFF8EE"/>
+  <rect x="18" y="18" width="40" height="40" fill="url(#teal)"/>
+  <rect x="70" y="18" width="40" height="40" fill="url(#amber)" fill-opacity="0.36"/>
+  <rect x="18" y="70" width="40" height="40" fill="#D8EEE8"/>
+  <path d="M31 31H45V45H31V31Z" fill="#FFFDF8"/>
+  <path d="M83 31H97V45H83V31Z" fill="#FFF4E2"/>
+  <path d="M31 83H45V97H31V83Z" fill="#0F766E" fill-opacity="0.72"/>
+</svg>

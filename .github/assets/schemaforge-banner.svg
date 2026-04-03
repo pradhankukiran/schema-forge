@@ -1,0 +1,59 @@
+<svg width="1600" height="460" viewBox="0 0 1600 460" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">SchemaForge banner</title>
+  <desc id="desc">SchemaForge banner with product title, tagline, and technology chips.</desc>
+  <defs>
+    <linearGradient id="bg" x1="88" y1="42" x2="1494" y2="418" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF9EE"/>
+      <stop offset="1" stop-color="#F3EEE4"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="84" y2="84" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#2D9A91"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="84" y2="84" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C7781F"/>
+      <stop offset="1" stop-color="#E39A3D"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="32"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="460" fill="url(#bg)"/>
+  <circle cx="132" cy="102" r="118" fill="#F4D9B2" opacity="0.58" filter="url(#soft)"/>
+  <circle cx="1452" cy="356" r="132" fill="#CBE8E2" opacity="0.72" filter="url(#soft)"/>
+  <rect x="42" y="42" width="1516" height="376" fill="#FFFDF8" fill-opacity="0.72" stroke="#D7DDD4" stroke-width="2"/>
+
+  <g transform="translate(110 112)">
+    <rect x="0" y="0" width="58" height="58" fill="url(#teal)"/>
+    <rect x="74" y="0" width="58" height="58" fill="url(#amber)" fill-opacity="0.34"/>
+    <rect x="0" y="74" width="58" height="58" fill="#D8EEE8"/>
+    <path d="M20 20H38V38H20V20Z" fill="#FFFDF8"/>
+    <path d="M94 20H112V38H94V20Z" fill="#FFF4E2"/>
+    <path d="M20 94H38V112H20V94Z" fill="#0F766E" fill-opacity="0.72"/>
+  </g>
+
+  <g transform="translate(294 112)" fill="#162033">
+    <text x="0" y="42" font-family="'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif" font-size="22" font-weight="700" letter-spacing="0.34em" fill="#7D8898">SCHEMAFORGE</text>
+    <text x="0" y="128" font-family="'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif" font-size="74" font-weight="700" letter-spacing="-0.06em">Visual database schema</text>
+    <text x="0" y="206" font-family="'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif" font-size="74" font-weight="700" letter-spacing="-0.06em">design and SQL prototyping</text>
+    <text x="0" y="258" font-family="'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif" font-size="28" font-weight="500" fill="#556173">Browser-first ERD studio, DDL import/export, and local SQLite query sandbox.</text>
+  </g>
+
+  <g transform="translate(294 318)">
+    <rect x="0" y="0" width="164" height="44" fill="#FFFFFF" fill-opacity="0.78" stroke="#D7DDD4" stroke-width="2"/>
+    <text x="24" y="29" font-family="'IBM Plex Mono', 'Cascadia Code', monospace" font-size="20" font-weight="600" fill="#162033">.NET 10</text>
+
+    <rect x="182" y="0" width="232" height="44" fill="#FFFFFF" fill-opacity="0.78" stroke="#D7DDD4" stroke-width="2"/>
+    <text x="206" y="29" font-family="'IBM Plex Mono', 'Cascadia Code', monospace" font-size="20" font-weight="600" fill="#162033">Blazor WASM</text>
+
+    <rect x="432" y="0" width="190" height="44" fill="#FFFFFF" fill-opacity="0.78" stroke="#D7DDD4" stroke-width="2"/>
+    <text x="456" y="29" font-family="'IBM Plex Mono', 'Cascadia Code', monospace" font-size="20" font-weight="600" fill="#162033">Monaco</text>
+
+    <rect x="640" y="0" width="186" height="44" fill="#FFFFFF" fill-opacity="0.78" stroke="#D7DDD4" stroke-width="2"/>
+    <text x="664" y="29" font-family="'IBM Plex Mono', 'Cascadia Code', monospace" font-size="20" font-weight="600" fill="#162033">sql.js</text>
+
+    <rect x="844" y="0" width="230" height="44" fill="#FFFFFF" fill-opacity="0.78" stroke="#D7DDD4" stroke-width="2"/>
+    <text x="868" y="29" font-family="'IBM Plex Mono', 'Cascadia Code', monospace" font-size="20" font-weight="600" fill="#162033">IndexedDB</text>
+  </g>
+</svg>
