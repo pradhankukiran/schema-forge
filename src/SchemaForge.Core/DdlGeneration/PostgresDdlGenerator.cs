@@ -62,6 +62,8 @@ public class PostgresDdlGenerator : IDdlGeneratorService
 
     public string GenerateCreateTable(TableDefinition table, SchemaDocument schema)
     {
+        if (table.Columns.Count == 0) return $"-- Skipped empty table: {table.Name}";
+
         var sb = new StringBuilder();
         sb.AppendLine($"CREATE TABLE {QuoteId(table.Name)} (");
 
