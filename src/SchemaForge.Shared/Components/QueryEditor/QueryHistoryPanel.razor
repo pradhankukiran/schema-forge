@@ -1,4 +1,5 @@
 @inject QueryState QueryState
+@inject SchemaForge.Shared.Interop.MonacoEditorInterop Monaco
 @implements IDisposable
 
 <aside class="sf-property-panel">
@@ -16,7 +17,8 @@
         {
             @foreach (var entry in QueryState.History)
             {
-                <div class="sf-history-item @(entry.Success ? "" : "error")" @key="entry.Id">
+                <div class="sf-history-item @(entry.Success ? "" : "error")" @key="entry.Id"
+                     @onclick="() => LoadQuery(entry.Sql)" style="cursor: pointer;">
                     <div class="sf-history-sql">@Truncate(entry.Sql, 80)</div>
                     <div class="sf-history-meta">
                         @if (entry.Success)
@@ -42,6 +44,17 @@
     protected override void OnInitialized()
     {
         QueryState.OnChange += StateHasChanged;
+    }
+
+    private async Task LoadQuery(string sql)
+    {
+        try
+        {
+            var editorId = $"monaco-editor-{QueryState.ActiveTab.Id}";
+            QueryState.UpdateTabContent(QueryState.ActiveTabIndex, sql);
+            await Monaco.SetValueAsync(editorId, sql);
+        }
+        catch { }
     }
 
     private static string Truncate(string text, int maxLen)
