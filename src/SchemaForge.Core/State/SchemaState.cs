@@ -26,6 +26,12 @@ public class SchemaState
         OnChange?.Invoke();
     }
 
+    public void DispatchSilent(ISchemaAction action)
+    {
+        Document = action.Apply(Document);
+        OnChange?.Invoke();
+    }
+
     public void Dispatch(ISchemaAction action)
     {
         var inverse = action.CreateInverse(Document);
