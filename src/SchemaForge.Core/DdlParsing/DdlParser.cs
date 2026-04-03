@@ -317,7 +317,7 @@ public static class DdlParser
     private static ColumnDefinition? ParseColumnDefinition(string def, int ordinal)
     {
         // Column starts with an identifier (possibly quoted)
-        var match = Regex.Match(def, @"^(`[^`]+`|""[^""]+""|[\[\]][^\]]*[\]\]]|\w+)\s+(.+)$",
+        var match = Regex.Match(def, @"^(\[[^\]]*\]|`[^`]+`|""[^""]+""|\w+)\s+(.+)$",
             RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
         if (!match.Success)
