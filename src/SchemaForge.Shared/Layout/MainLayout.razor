@@ -59,6 +59,22 @@
                 case "Ctrl+Y":
                     SchemaState.Redo();
                     break;
+                case "Ctrl+T":
+                    var tableCount = SchemaState.Document.Tables.Count;
+                    SchemaState.Dispatch(new AddTableAction(new SchemaForge.Core.Models.TableDefinition
+                    {
+                        Name = $"table_{tableCount + 1}",
+                        Columns = [new SchemaForge.Core.Models.ColumnDefinition
+                        {
+                            Name = "id",
+                            DataType = SchemaForge.Core.Models.LogicalDataType.Integer,
+                            IsPrimaryKey = true,
+                            IsAutoIncrement = true,
+                            IsNullable = false
+                        }]
+                    }));
+                    await InvokeAsync(StateHasChanged);
+                    break;
             }
         }
         catch (Exception)
@@ -67,7 +83,14 @@
         }
     }
 
-    private void GoHome() => Nav.NavigateTo("/home");
+    private async Task GoHome()
+    {
+        if (AutoSave.SaveStatus == "Unsaved changes")
+        {
+            await AutoSave.SaveNowAsync();
+        }
+        Nav.NavigateTo("/home");
+    }
 
     public void Dispose()
     {
