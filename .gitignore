@@ -17,6 +17,10 @@ obj/
 .idea/
 *.swp
 *~
+node_modules/
+TestResults/
+coverage/
+playwright-report/
 
 ## Build results
 [Dd]ebug/

@@ -62,7 +62,7 @@
 
         if (!string.IsNullOrEmpty(ProjectContext.ProjectId))
         {
-            AutoSave.Start(ProjectContext.ProjectId);
+            AutoSave.Start(ProjectContext.ProjectId, ProjectContext.HasStoredSnapshot);
         }
     }
 

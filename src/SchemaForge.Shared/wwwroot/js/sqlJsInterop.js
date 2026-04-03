@@ -2,11 +2,34 @@ let db = null;
 let SQL = null;
 
 let _initPromise = null;
+let _scriptLoadPromise = null;
+
+function loadSqlJsLocally() {
+    if (window.initSqlJs) {
+        return Promise.resolve();
+    }
+
+    if (_scriptLoadPromise) {
+        return _scriptLoadPromise;
+    }
+
+    _scriptLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = new URL("../vendor/sql.js/sql-wasm.js", import.meta.url).toString();
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+
+    return _scriptLoadPromise;
+}
+
 export function initialize() {
     if (!_initPromise) {
         _initPromise = (async () => {
+            await loadSqlJsLocally();
             SQL = await initSqlJs({
-                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/${file}`
+                locateFile: file => new URL(`../vendor/sql.js/${file}`, import.meta.url).toString()
             });
             db = new SQL.Database();
             return true;

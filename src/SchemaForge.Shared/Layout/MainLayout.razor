@@ -8,9 +8,9 @@
 @implements IDisposable
 
 <div class="sf-app" role="application" aria-label="SchemaForge">
-    <div class="sf-small-screen-banner">For the best experience, use a screen wider than 960px.</div>
+    <div class="sf-small-screen-banner">SchemaForge works best on a wider screen. Design mode is optimized for 960px and up.</div>
     <TopBar IsDesignMode="@_isDesignMode" IsDesignModeChanged="SetMode" OnNavigateHome="GoHome" />
-    <div class="sf-body" role="main">
+    <div class="sf-body @(IsDesignerRoute ? "sf-body-workspace" : "sf-body-page")" role="main">
         <CascadingValue Value="@_isDesignMode" Name="IsDesignMode">
             @Body
         </CascadingValue>
@@ -20,6 +20,7 @@
 
 @code {
     private bool _isDesignMode = true;
+    private bool IsDesignerRoute => Nav.ToBaseRelativePath(Nav.Uri).StartsWith("designer", StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -27,7 +28,13 @@
         {
             await Keyboard.InitializeAsync();
             Keyboard.OnShortcut += HandleShortcut;
+            Nav.LocationChanged += HandleLocationChanged;
         }
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private void SetMode(bool isDesign)
@@ -36,7 +43,12 @@
         StateHasChanged();
     }
 
-    private async void HandleShortcut(string shortcut)
+    private void HandleShortcut(string shortcut)
+    {
+        _ = HandleShortcutAsync(shortcut);
+    }
+
+    private async Task HandleShortcutAsync(string shortcut)
     {
         try
         {
@@ -95,5 +107,6 @@
     public void Dispose()
     {
         Keyboard.OnShortcut -= HandleShortcut;
+        Nav.LocationChanged -= HandleLocationChanged;
     }
 }

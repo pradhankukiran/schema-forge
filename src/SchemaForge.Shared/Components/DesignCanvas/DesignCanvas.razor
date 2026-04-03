@@ -131,9 +131,12 @@
     [JSInvokable]
     public void OnContainerResized(double w, double h)
     {
+        if (Math.Abs(_containerWidth - w) < 0.5 && Math.Abs(_containerHeight - h) < 0.5)
+            return;
+
         _containerWidth = w;
         _containerHeight = h;
-        StateHasChanged();
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private void AddTable()

@@ -10,7 +10,7 @@
                 <button class="sf-btn sf-btn-icon" @onclick="Close">x</button>
             </div>
             <div class="sf-modal-body">
-                <p class="sf-modal-hint">Paste CREATE TABLE / ALTER TABLE SQL statements below.</p>
+                <p class="sf-modal-hint">Best-effort import for `CREATE TABLE`, `ALTER TABLE ... ADD CONSTRAINT`, and `CREATE INDEX` statements.</p>
                 <textarea class="sf-textarea" rows="12" @bind="_ddlText" placeholder="CREATE TABLE users (&#10;  id INTEGER PRIMARY KEY,&#10;  name VARCHAR(100) NOT NULL&#10;);"></textarea>
 
                 @if (_showWarning)

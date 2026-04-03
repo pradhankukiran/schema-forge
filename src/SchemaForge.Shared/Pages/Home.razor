@@ -8,29 +8,86 @@
 @inject SchemaForge.Shared.Services.ProjectContext ProjectContext
 
 <div class="sf-home">
-    <div class="sf-home-header">
-        <h1 class="sf-home-title">SchemaForge</h1>
-        <p class="sf-home-subtitle">Visual Database Schema Designer + SQL Playground</p>
+    <div class="sf-home-hero">
+        <div class="sf-home-header">
+            <span class="sf-home-kicker">Browser-first schema studio</span>
+            <h1 class="sf-home-title">Design relational models, generate DDL, and test queries without leaving the browser.</h1>
+            <p class="sf-home-subtitle">SchemaForge combines a visual ERD canvas, multi-dialect SQL export, DDL import, and a local SQLite playground in one workspace.</p>
+
+            <div class="sf-home-actions">
+                <button class="sf-btn sf-btn-primary sf-btn-lg" @onclick="CreateNewProject">
+                    Start New Project
+                </button>
+                @if (LatestProject != null)
+                {
+                    <button class="sf-btn sf-btn-lg" @onclick="() => OpenProject(LatestProject.Id)">
+                        Resume Latest
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="sf-home-hero-panel">
+            <div class="sf-home-metric-grid">
+                <div class="sf-home-metric-card">
+                    <span class="sf-home-metric-label">Dialects</span>
+                    <strong class="sf-home-metric-value">4</strong>
+                    <span class="sf-home-metric-note">SQLite, PostgreSQL, MySQL, SQL Server</span>
+                </div>
+                <div class="sf-home-metric-card">
+                    <span class="sf-home-metric-label">Recent Projects</span>
+                    <strong class="sf-home-metric-value">@_recentProjects.Count</strong>
+                    <span class="sf-home-metric-note">Stored locally in IndexedDB</span>
+                </div>
+                <div class="sf-home-metric-card">
+                    <span class="sf-home-metric-label">Saved Tables</span>
+                    <strong class="sf-home-metric-value">@_recentProjects.Sum(p => p.TableCount)</strong>
+                    <span class="sf-home-metric-note">Across your local workspace</span>
+                </div>
+            </div>
+
+            <div class="sf-home-preview-stack" aria-hidden="true">
+                <div class="sf-home-preview-card">
+                    <span class="sf-home-preview-eyebrow">Design</span>
+                    <strong>Drag tables, link relationships, and auto-layout dense schemas.</strong>
+                </div>
+                <div class="sf-home-preview-card">
+                    <span class="sf-home-preview-eyebrow">Query</span>
+                    <strong>Apply the current model into SQLite and iterate with a Monaco-powered editor.</strong>
+                </div>
+                <div class="sf-home-preview-card">
+                    <span class="sf-home-preview-eyebrow">Export</span>
+                    <strong>Ship SQL, PNG, or SVG output without leaving the browser session.</strong>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="sf-home-content">
         <div class="sf-home-section">
             <div class="sf-section-header">
-                <span>New Project</span>
+                <span>Quick Start</span>
             </div>
-            <button class="sf-btn sf-btn-primary sf-btn-lg" @onclick="CreateNewProject">
-                + New Project
-            </button>
+            <div class="sf-home-feature-grid">
+                <button class="sf-home-action-card" @onclick="CreateNewProject">
+                    <span class="sf-home-action-title">Blank Workspace</span>
+                    <span class="sf-home-action-desc">Start from an empty canvas with autosave enabled.</span>
+                </button>
+                <button class="sf-home-action-card" @onclick="() => _showSamples = !_showSamples">
+                    <span class="sf-home-action-title">Sample Schemas</span>
+                    <span class="sf-home-action-desc">Explore modeled domains and inspect generated DDL.</span>
+                </button>
+            </div>
         </div>
 
-        <div class="sf-home-section">
+        <div class="sf-home-section" style="@(_showSamples ? null : "display:none;")">
             <div class="sf-section-header">
                 <span>Sample Schemas</span>
             </div>
             <div class="sf-sample-grid">
                 @foreach (var sample in _samples)
                 {
-                    <div @key="sample.Key" class="sf-sample-card" @onclick="() => LoadSample(sample.Key)">
+                    <div @key="sample.Key" class="sf-sample-card" style="--sf-sample-accent: @sample.AccentColor;" @onclick="() => LoadSample(sample.Key)">
                         <div class="sf-sample-name">@sample.Name</div>
                         <div class="sf-sample-desc">@sample.Description</div>
                         <div class="sf-sample-meta">@sample.TableCount tables</div>
@@ -65,18 +122,32 @@
                 </div>
             </div>
         }
+        else
+        {
+            <div class="sf-home-section">
+                <div class="sf-section-header">
+                    <span>Recent Projects</span>
+                </div>
+                <div class="sf-panel-empty">
+                    No local projects yet. Start with a blank workspace or load one of the sample schemas above.
+                </div>
+            </div>
+        }
     </div>
 </div>
 
 @code {
     private List<ProjectSummary> _recentProjects = [];
     private string? _confirmDeleteId;
+    private bool _showSamples = true;
     private static readonly SampleInfo[] _samples =
     [
-        new("blog", "Blog", "Users, posts, comments, tags", 5),
-        new("ecommerce", "E-Commerce", "Products, orders, customers, reviews", 7),
-        new("northwind", "Northwind", "Classic sample: customers, orders, products", 8),
+        new("blog", "Blog", "Users, posts, revisions, media, categories, and tags", 9, "#0f766e"),
+        new("ecommerce", "E-Commerce", "Products, carts, orders, payments, shipments, and reviews", 11, "#b45309"),
+        new("northwind", "Northwind", "Expanded sales sample with territories and customer demographics", 13, "#1d4ed8"),
     ];
+
+    private ProjectSummary? LatestProject => _recentProjects.FirstOrDefault();
 
     protected override async Task OnInitializedAsync()
     {
@@ -93,6 +164,7 @@
     private void CreateNewProject()
     {
         ProjectContext.ProjectId = Guid.NewGuid().ToString();
+        ProjectContext.HasStoredSnapshot = false;
         SchemaState.LoadDocument(new SchemaDocument { Name = "Untitled Project" });
         QueryState.LoadState([], 0, []);
         Nav.NavigateTo("/designer");
@@ -102,6 +174,7 @@
     {
         var project = await Storage.LoadProjectAsync(projectId);
         ProjectContext.ProjectId = project.Id;
+        ProjectContext.HasStoredSnapshot = true;
         SchemaState.LoadDocument(project.Schema);
         QueryState.LoadState(project.QueryTabs, project.ActiveQueryTabIndex, project.QueryHistory);
         Nav.NavigateTo("/designer");
@@ -130,11 +203,12 @@
     private void LoadSample(string key)
     {
         ProjectContext.ProjectId = Guid.NewGuid().ToString();
+        ProjectContext.HasStoredSnapshot = false;
         var schema = SampleSchemas.Get(key);
         SchemaState.LoadDocument(schema);
         QueryState.LoadState([], 0, []);
         Nav.NavigateTo("/designer");
     }
 
-    private record SampleInfo(string Key, string Name, string Description, int TableCount);
+    private record SampleInfo(string Key, string Name, string Description, int TableCount, string AccentColor);
 }

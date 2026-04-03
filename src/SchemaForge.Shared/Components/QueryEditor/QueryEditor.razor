@@ -91,13 +91,13 @@
 </div>
 
 @code {
+    private const string EditorElementId = "monaco-query-editor";
+
     private bool _initialized;
     private bool _isExecuting;
     private bool _schemaApplied;
     private string? _applyMessage;
     private QueryResult? _lastResult;
-
-    private string EditorElementId => $"monaco-editor-{QueryState.ActiveTab.Id}";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -109,7 +109,8 @@
                 await SqlEngine.InitializeAsync();
 
             Monaco.OnExecuteRequested += OnMonacoExecute;
-            SchemaState.OnChange += OnSchemaChanged;
+            Monaco.OnContentChanged += OnMonacoContentChanged;
+            SchemaState.OnChange += HandleSchemaChanged;
             QueryState.OnChange += StateHasChanged;
 
             _initialized = true;
@@ -124,44 +125,39 @@
 
     private async Task EnsureEditorCreated()
     {
-        try
+        if (!await Monaco.HasEditorAsync(EditorElementId))
         {
-            var existing = await Monaco.GetValueAsync(EditorElementId);
-            // Editor already exists
-        }
-        catch
-        {
-            // Editor doesn't exist, create it
             await Monaco.CreateEditorAsync(EditorElementId, QueryState.ActiveTab.SqlContent);
         }
+
+        await Monaco.SetContextAsync(EditorElementId, QueryState.ActiveTab.Id);
     }
 
     private async Task SwitchTab(int index)
     {
-        // Save current tab content
-        try
-        {
-            var content = await Monaco.GetValueAsync(EditorElementId);
-            QueryState.UpdateTabContent(QueryState.ActiveTabIndex, content);
-        }
-        catch { /* editor may not exist */ }
+        if (index == QueryState.ActiveTabIndex)
+            return;
 
+        await SyncEditorToStateAsync();
         QueryState.SetActiveTab(index);
         _lastResult = QueryState.ActiveTab.LastResult;
-        StateHasChanged();
+        await ApplyActiveTabToEditorAsync();
     }
 
-    private void AddTab()
+    private async Task AddTab()
     {
+        await SyncEditorToStateAsync();
         QueryState.AddTab();
+        _lastResult = QueryState.ActiveTab.LastResult;
+        await ApplyActiveTabToEditorAsync();
     }
 
     private async Task CloseTab(int index)
     {
-        var tabId = QueryState.Tabs[index].Id;
-        try { await Monaco.DisposeEditorAsync($"monaco-editor-{tabId}"); } catch { }
+        await SyncEditorToStateAsync();
         QueryState.CloseTab(index);
         _lastResult = QueryState.ActiveTab.LastResult;
+        await ApplyActiveTabToEditorAsync();
     }
 
     private async Task ExecuteQuery()
@@ -182,7 +178,6 @@
                 return;
             }
 
-            // Save content
             QueryState.UpdateTabContent(QueryState.ActiveTabIndex, sql);
 
             var result = await SqlEngine.ExecuteAsync(queryToRun);
@@ -224,6 +219,14 @@
         }
     }
 
+    private Task OnMonacoContentChanged(string editorId, string tabId, string sql)
+    {
+        if (editorId == EditorElementId && !string.IsNullOrEmpty(tabId))
+            QueryState.UpdateTabContent(tabId, sql);
+
+        return Task.CompletedTask;
+    }
+
     private async Task ApplySchema()
     {
         // Sandbox always uses SQLite regardless of the selected DDL dialect
@@ -253,7 +256,12 @@
         StateHasChanged();
     }
 
-    private async void OnSchemaChanged()
+    private void HandleSchemaChanged()
+    {
+        _ = OnSchemaChangedAsync();
+    }
+
+    private async Task OnSchemaChangedAsync()
     {
         try
         {
@@ -268,6 +276,25 @@
         }
     }
 
+    private async Task SyncEditorToStateAsync()
+    {
+        if (!_initialized || !await Monaco.HasEditorAsync(EditorElementId))
+            return;
+
+        var content = await Monaco.GetValueAsync(EditorElementId);
+        QueryState.UpdateTabContent(QueryState.ActiveTabIndex, content);
+    }
+
+    private async Task ApplyActiveTabToEditorAsync()
+    {
+        if (!_initialized || !await Monaco.HasEditorAsync(EditorElementId))
+            return;
+
+        await Monaco.SetContextAsync(EditorElementId, QueryState.ActiveTab.Id);
+        await Monaco.SetValueAsync(EditorElementId, QueryState.ActiveTab.SqlContent);
+        await Monaco.FocusAsync(EditorElementId);
+    }
+
     private async Task UpdateCompletionItems()
     {
         var tableNames = SchemaState.Document.Tables.Select(t => t.Name).ToArray();
@@ -280,12 +307,14 @@
 
     public void Dispose()
     {
-        SchemaState.OnChange -= OnSchemaChanged;
+        SchemaState.OnChange -= HandleSchemaChanged;
         QueryState.OnChange -= StateHasChanged;
     }
 
     public async ValueTask DisposeAsync()
     {
         Monaco.OnExecuteRequested -= OnMonacoExecute;
+        Monaco.OnContentChanged -= OnMonacoContentChanged;
+        await Monaco.DisposeEditorAsync(EditorElementId);
     }
 }

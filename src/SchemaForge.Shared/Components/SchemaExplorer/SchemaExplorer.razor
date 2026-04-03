@@ -3,7 +3,11 @@
 
 <aside class="sf-explorer">
     <div class="sf-explorer-header">
-        <span class="sf-explorer-title">Schema Explorer</span>
+        <div>
+            <span class="sf-explorer-title">Schema Explorer</span>
+            <div class="sf-explorer-subtitle">Browse tables, keys, and field types</div>
+        </div>
+        <span class="sf-tree-badge">@SchemaState.Document.Tables.Count</span>
     </div>
 
     <div class="sf-explorer-search">
@@ -42,7 +46,7 @@
 
         @if (SchemaState.Document.Tables.Count == 0)
         {
-            <div class="sf-tree-empty">No tables yet. Click "+ Table" to create one.</div>
+            <div class="sf-tree-empty">No tables yet. Create one from the canvas toolbar to start mapping your schema.</div>
         }
     </div>
 </aside>

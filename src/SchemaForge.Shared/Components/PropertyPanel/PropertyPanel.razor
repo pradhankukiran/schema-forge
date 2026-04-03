@@ -4,7 +4,10 @@
     @if (Table != null)
     {
         <div class="sf-panel-header">
-            <span>Table Properties</span>
+            <div class="sf-panel-heading">
+                <span>Table Properties</span>
+                <strong class="sf-panel-title">@Table.Name</strong>
+            </div>
             <button class="sf-btn sf-btn-sm @(_confirmDeleteTable ? "sf-btn-danger" : "")"
                     @onclick="ConfirmDeleteTable"
                     title="@(_confirmDeleteTable ? "Click again to confirm" : "Delete Table")">
@@ -79,7 +82,7 @@
     else
     {
         <div class="sf-panel-empty">
-            Select a table to view its properties.
+            Select a table on the canvas to edit its name, color, and columns.
         </div>
     }
 </aside>

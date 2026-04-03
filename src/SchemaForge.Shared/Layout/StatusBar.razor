@@ -5,20 +5,19 @@
 
 <footer class="sf-statusbar">
     <div class="sf-statusbar-left">
-        <span class="sf-status-dot"></span>
-        <span>@SchemaState.Document.TargetDialect Ready</span>
-        <span class="sf-sep">|</span>
-        <span class="@(AutoSave.SaveStatus == "Saved" ? "" : "sf-unsaved")">@AutoSave.SaveStatus</span>
+        <span class="sf-status-pill">
+            <span class="sf-status-dot"></span>
+            @FormatDialect(SchemaState.Document.TargetDialect)
+        </span>
+        <span class="sf-status-pill @(AutoSave.SaveStatus == "Saved" ? "" : "sf-unsaved")">@AutoSave.SaveStatus</span>
     </div>
     <div class="sf-statusbar-center">
-        <span>@SchemaState.Document.Tables.Count tables</span>
-        <span class="sf-sep">|</span>
-        <span>@SchemaState.Document.Tables.Sum(t => t.Columns.Count) columns</span>
-        <span class="sf-sep">|</span>
-        <span>@SchemaState.Document.Relationships.Count relationships</span>
+        <span class="sf-status-pill">@SchemaState.Document.Tables.Count tables</span>
+        <span class="sf-status-pill">@SchemaState.Document.Tables.Sum(t => t.Columns.Count) columns</span>
+        <span class="sf-status-pill">@SchemaState.Document.Relationships.Count relationships</span>
     </div>
     <div class="sf-statusbar-right">
-        <span>@((int)(SchemaState.Document.Canvas.Zoom * 100))%</span>
+        <span class="sf-status-pill">@((int)(SchemaState.Document.Canvas.Zoom * 100))% zoom</span>
     </div>
 </footer>
 
@@ -38,4 +37,13 @@
         if (_onSaveStatusChanged != null)
             AutoSave.OnSaveStatusChanged -= _onSaveStatusChanged;
     }
+
+    private static string FormatDialect(SqlDialect dialect) => dialect switch
+    {
+        SqlDialect.SQLite => "SQLite",
+        SqlDialect.PostgreSQL => "PostgreSQL",
+        SqlDialect.MySQL => "MySQL",
+        SqlDialect.SqlServer => "SQL Server",
+        _ => dialect.ToString()
+    };
 }

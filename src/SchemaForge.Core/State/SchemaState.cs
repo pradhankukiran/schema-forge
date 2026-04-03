@@ -10,6 +10,7 @@ public class SchemaState
     private readonly Stack<(ISchemaAction Action, ISchemaAction Inverse)> _redoStack = new();
 
     public event Action? OnChange;
+    public event Action? OnDirty;
 
     public SchemaDocument Document { get; private set; } = new();
 
@@ -29,6 +30,7 @@ public class SchemaState
     public void DispatchSilent(ISchemaAction action)
     {
         Document = action.Apply(Document);
+        OnDirty?.Invoke();
         OnChange?.Invoke();
     }
 
@@ -42,6 +44,7 @@ public class SchemaState
         if (_undoStack.Count > MaxUndoDepth)
             TrimUndoStack();
 
+        OnDirty?.Invoke();
         OnChange?.Invoke();
     }
 
@@ -52,6 +55,7 @@ public class SchemaState
         var (action, inverse) = _undoStack.Pop();
         Document = inverse.Apply(Document);
         _redoStack.Push((inverse, action));
+        OnDirty?.Invoke();
         OnChange?.Invoke();
     }
 
@@ -62,6 +66,7 @@ public class SchemaState
         var (inverse, forward) = _redoStack.Pop();
         Document = forward.Apply(Document);
         _undoStack.Push((forward, inverse));
+        OnDirty?.Invoke();
         OnChange?.Invoke();
     }
 

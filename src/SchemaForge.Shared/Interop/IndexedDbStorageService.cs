@@ -1,21 +1,14 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.JSInterop;
 using SchemaForge.Core.Models;
 using SchemaForge.Core.Services;
+using SchemaForge.Shared.Serialization;
 
 namespace SchemaForge.Shared.Interop;
 
 public class IndexedDbStorageService : IProjectStorageService, IAsyncDisposable
 {
     private readonly Lazy<Task<IJSObjectReference>> _moduleTask;
-
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new JsonStringEnumConverter() },
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
 
     public IndexedDbStorageService(IJSRuntime jsRuntime)
     {
@@ -53,14 +46,13 @@ public class IndexedDbStorageService : IProjectStorageService, IAsyncDisposable
         if (json.ValueKind == JsonValueKind.Null)
             throw new InvalidOperationException($"Project {projectId} not found");
 
-        return JsonSerializer.Deserialize<Project>(json.GetRawText(), JsonOptions)
-            ?? throw new InvalidOperationException("Failed to deserialize project");
+        return ProjectJsonSerializer.DeserializeProject(json);
     }
 
     public async Task SaveProjectAsync(Project project)
     {
         var module = await _moduleTask.Value;
-        var json = JsonSerializer.SerializeToElement(project, JsonOptions);
+        var json = ProjectJsonSerializer.SerializeToElement(project);
         await module.InvokeAsync<bool>("saveProject", json);
     }
 

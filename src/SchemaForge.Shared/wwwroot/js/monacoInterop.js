@@ -1,33 +1,35 @@
 const editors = new Map();
 let monacoReady = false;
 let dotNetRef = null;
+let monacoLoadPromise = null;
 
 export async function initialize(dotNetReference) {
     dotNetRef = dotNetReference;
 
-    if (monacoReady) return true;
+    if (!monacoLoadPromise) {
+        monacoLoadPromise = loadMonacoLocally();
+    }
 
-    await loadMonacoFromCdn();
+    await monacoLoadPromise;
     monacoReady = true;
     return true;
 }
 
-function loadMonacoFromCdn() {
+function loadMonacoLocally() {
     return new Promise((resolve, reject) => {
         if (window.monaco) {
             resolve();
             return;
         }
 
+        const vsBaseUrl = new URL("../vendor/monaco-editor/min/vs/", import.meta.url).toString().replace(/\/$/, "");
         const script = document.createElement("script");
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js";
+        script.src = new URL("../vendor/monaco-editor/min/vs/loader.js", import.meta.url).toString();
         script.onload = () => {
             window.require.config({
-                paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs" }
+                paths: { vs: vsBaseUrl }
             });
-            window.require(["vs/editor/editor.main"], () => {
-                resolve();
-            });
+            window.require(["vs/editor/editor.main"], resolve, reject);
         };
         script.onerror = reject;
         document.head.appendChild(script);
@@ -39,6 +41,8 @@ export function createEditor(elementId, initialValue, language) {
 
     const container = document.getElementById(elementId);
     if (!container) throw new Error(`Element ${elementId} not found`);
+
+    dispose(elementId);
 
     const editor = monaco.editor.create(container, {
         value: initialValue || "",
@@ -77,24 +81,48 @@ export function createEditor(elementId, initialValue, language) {
         }
     });
 
-    editors.set(elementId, editor);
+    const record = { editor, context: "" };
+    editor.onDidChangeModelContent(() => {
+        if (dotNetRef) {
+            dotNetRef.invokeMethodAsync(
+                "OnContentChanged_Internal",
+                elementId,
+                record.context || "",
+                editor.getValue());
+        }
+    });
+
+    editors.set(elementId, record);
     return true;
 }
 
+export function hasEditor(elementId) {
+    return editors.has(elementId);
+}
+
+export function setContext(elementId, context) {
+    const record = editors.get(elementId);
+    if (record) {
+        record.context = context || "";
+    }
+}
+
 export function getValue(elementId) {
-    const editor = editors.get(elementId);
-    return editor ? editor.getValue() : "";
+    const record = editors.get(elementId);
+    return record ? record.editor.getValue() : "";
 }
 
 export function setValue(elementId, value) {
-    const editor = editors.get(elementId);
-    if (editor) editor.setValue(value || "");
+    const record = editors.get(elementId);
+    if (record) {
+        record.editor.setValue(value || "");
+    }
 }
 
 export function getSelectedText(elementId) {
-    const editor = editors.get(elementId);
-    if (!editor) return "";
-    return editor.getModel().getValueInRange(editor.getSelection()) || "";
+    const record = editors.get(elementId);
+    if (!record) return "";
+    return record.editor.getModel().getValueInRange(record.editor.getSelection()) || "";
 }
 
 export function setCompletionItems(tableNames, tableColumns) {
@@ -170,21 +198,23 @@ export function setCompletionItems(tableNames, tableColumns) {
 }
 
 export function focus(elementId) {
-    const editor = editors.get(elementId);
-    if (editor) editor.focus();
+    const record = editors.get(elementId);
+    if (record) {
+        record.editor.focus();
+    }
 }
 
 export function dispose(elementId) {
-    const editor = editors.get(elementId);
-    if (editor) {
-        editor.dispose();
+    const record = editors.get(elementId);
+    if (record) {
+        record.editor.dispose();
         editors.delete(elementId);
     }
 }
 
 export function disposeAll() {
-    for (const [id, editor] of editors) {
-        editor.dispose();
+    for (const [, record] of editors) {
+        record.editor.dispose();
     }
     editors.clear();
     if (window._sfCompletionDisposable) {

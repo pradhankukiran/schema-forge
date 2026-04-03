@@ -4,4 +4,7 @@
     <Project Path="src/SchemaForge.Shared/SchemaForge.Shared.csproj" />
     <Project Path="src/SchemaForge.Wasm/SchemaForge.Wasm.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SchemaForge.Core.Tests/SchemaForge.Core.Tests.csproj" />
+  </Folder>
 </Solution>

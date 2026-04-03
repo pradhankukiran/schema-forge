@@ -8,6 +8,7 @@ public class MonacoEditorInterop : IAsyncDisposable
     private DotNetObjectReference<MonacoEditorInterop>? _dotNetRef;
 
     public event Func<string, string, Task>? OnExecuteRequested;
+    public event Func<string, string, string, Task>? OnContentChanged;
 
     public MonacoEditorInterop(IJSRuntime jsRuntime)
     {
@@ -27,6 +28,18 @@ public class MonacoEditorInterop : IAsyncDisposable
     {
         var module = await _moduleTask.Value;
         await module.InvokeAsync<bool>("createEditor", elementId, initialValue, language);
+    }
+
+    public async Task<bool> HasEditorAsync(string elementId)
+    {
+        var module = await _moduleTask.Value;
+        return await module.InvokeAsync<bool>("hasEditor", elementId);
+    }
+
+    public async Task SetContextAsync(string elementId, string context)
+    {
+        var module = await _moduleTask.Value;
+        await module.InvokeVoidAsync("setContext", elementId, context);
     }
 
     public async Task<string> GetValueAsync(string elementId)
@@ -70,6 +83,13 @@ public class MonacoEditorInterop : IAsyncDisposable
     {
         if (OnExecuteRequested != null)
             await OnExecuteRequested.Invoke(editorId, sql);
+    }
+
+    [JSInvokable]
+    public async Task OnContentChanged_Internal(string editorId, string context, string sql)
+    {
+        if (OnContentChanged != null)
+            await OnContentChanged.Invoke(editorId, context, sql);
     }
 
     public async ValueTask DisposeAsync()

@@ -3,6 +3,9 @@ const DB_VERSION = 1;
 const STORE_NAME = "projects";
 
 let _db = null;
+let _pendingProject = null;
+let _lifecyclePersistenceInitialized = false;
+let _pendingPersistPromise = Promise.resolve();
 
 function openDb() {
     if (_db) return Promise.resolve(_db);
@@ -51,12 +54,16 @@ export async function loadProject(projectId) {
 }
 
 export async function saveProject(project) {
+    _pendingProject = project;
     const store = await tx("readwrite");
     await promisify(store.put(project));
     return true;
 }
 
 export async function deleteProject(projectId) {
+    if (_pendingProject?.id === projectId) {
+        _pendingProject = null;
+    }
     const store = await tx("readwrite");
     await promisify(store.delete(projectId));
     return true;
@@ -65,4 +72,47 @@ export async function deleteProject(projectId) {
 export async function getProjectCount() {
     const store = await tx("readonly");
     return await promisify(store.count());
+}
+
+async function persistPendingProject() {
+    if (!_pendingProject) {
+        return false;
+    }
+
+    const store = await tx("readwrite");
+    await promisify(store.put(_pendingProject));
+    return true;
+}
+
+function queuePendingProjectPersist() {
+    _pendingPersistPromise = _pendingPersistPromise
+        .catch(() => {})
+        .then(() => persistPendingProject())
+        .catch(() => false);
+
+    return _pendingPersistPromise;
+}
+
+export function setPendingProject(project) {
+    _pendingProject = project;
+    return true;
+}
+
+export function initializeLifecyclePersistence() {
+    if (_lifecyclePersistenceInitialized) {
+        return true;
+    }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+            void queuePendingProjectPersist();
+        }
+    });
+
+    window.addEventListener("pagehide", () => {
+        void queuePendingProjectPersist();
+    });
+
+    _lifecyclePersistenceInitialized = true;
+    return true;
 }

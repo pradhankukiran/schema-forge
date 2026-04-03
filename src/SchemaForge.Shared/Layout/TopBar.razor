@@ -8,17 +8,26 @@
 
 <header class="sf-topbar">
     <div class="sf-topbar-left">
-        <span class="sf-logo">SchemaForge</span>
+        <div class="sf-brand-lockup">
+            <span class="sf-logo">SchemaForge</span>
+            <span class="sf-brand-tag">Visual ERD studio with a local SQL sandbox</span>
+        </div>
     </div>
-    <div class="sf-topbar-center" role="tablist">
-        <button class="sf-mode-tab @(IsDesignMode ? "active" : "")" role="tab" aria-selected="@(IsDesignMode ? "true" : "false")" @onclick="() => IsDesignModeChanged.InvokeAsync(true)">
-            Design
-        </button>
-        <button class="sf-mode-tab @(!IsDesignMode ? "active" : "")" role="tab" aria-selected="@(!IsDesignMode ? "true" : "false")" @onclick="() => IsDesignModeChanged.InvokeAsync(false)">
-            Query
-        </button>
+    <div class="sf-topbar-center">
+        <div class="sf-mode-switch" role="tablist" aria-label="Workspace mode">
+            <button class="sf-mode-tab @(IsDesignMode ? "active" : "")" role="tab" aria-selected="@(IsDesignMode ? "true" : "false")" @onclick="() => IsDesignModeChanged.InvokeAsync(true)">
+                Design
+            </button>
+            <button class="sf-mode-tab @(!IsDesignMode ? "active" : "")" role="tab" aria-selected="@(!IsDesignMode ? "true" : "false")" @onclick="() => IsDesignModeChanged.InvokeAsync(false)">
+                Query
+            </button>
+        </div>
     </div>
     <div class="sf-topbar-right">
+        <div class="sf-topbar-stats" aria-hidden="true">
+            <span class="sf-topbar-stat"><strong>@SchemaState.Document.Tables.Count</strong> tables</span>
+            <span class="sf-topbar-stat"><strong>@SchemaState.Document.Relationships.Count</strong> links</span>
+        </div>
         <DialectSelector />
         <button class="sf-btn sf-btn-sm" @onclick="() => _showImport = true">Import</button>
         <DropdownMenu Label="Export">

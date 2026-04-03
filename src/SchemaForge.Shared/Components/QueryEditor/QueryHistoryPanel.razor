@@ -50,7 +50,7 @@
     {
         try
         {
-            var editorId = $"monaco-editor-{QueryState.ActiveTab.Id}";
+            const string editorId = "monaco-query-editor";
             QueryState.UpdateTabContent(QueryState.ActiveTabIndex, sql);
             await Monaco.SetValueAsync(editorId, sql);
         }
