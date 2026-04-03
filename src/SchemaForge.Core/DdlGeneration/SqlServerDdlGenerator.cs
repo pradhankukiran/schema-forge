@@ -190,7 +190,7 @@ public class SqlServerDdlGenerator : IDdlGeneratorService
     {
         ReferentialAction.Cascade => "CASCADE",
         ReferentialAction.SetNull => "SET NULL",
-        ReferentialAction.Restrict => "RESTRICT",
+        ReferentialAction.Restrict => "NO ACTION",
         ReferentialAction.SetDefault => "SET DEFAULT",
         _ => "NO ACTION"
     };
