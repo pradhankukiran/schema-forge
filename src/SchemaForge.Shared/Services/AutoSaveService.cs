@@ -14,7 +14,7 @@ public class AutoSaveService : IDisposable
     private bool _isDirty;
 
     public event Action<string>? OnSaveStatusChanged;
-    public string SaveStatus { get; private set; } = "Saved";
+    public string SaveStatus { get; private set; } = "Not saved";
 
     public AutoSaveService(SchemaState schemaState, QueryState queryState, IProjectStorageService storage)
     {
