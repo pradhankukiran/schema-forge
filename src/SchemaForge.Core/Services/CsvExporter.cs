@@ -30,7 +30,7 @@ public static class CsvExporter
 
     private static string EscapeCsv(string value)
     {
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
             return $"\"{value.Replace("\"", "\"\"")}\"";
         return value;
     }
@@ -39,7 +39,7 @@ public static class CsvExporter
     {
         null => "NULL",
         bool b => b ? "1" : "0",
-        double or float or int or long => value.ToString()!,
+        double or float or int or long or decimal or short or byte => ((IFormattable)value).ToString(null, System.Globalization.CultureInfo.InvariantCulture),
         _ => $"'{value.ToString()!.Replace("'", "''")}'",
     };
 }
