@@ -1,18 +1,29 @@
 /* SchemaForge Responsive Layout */
 
-/* Medium screens: collapse property panel */
+/* Medium screens: narrow sidebar, narrow props */
 @media (max-width: 1280px) {
+    .sf-designer-sidebar {
+        width: 180px;
+    }
+
+    .sf-designer-props {
+        width: 260px;
+    }
+}
+
+/* Smaller screens: collapse property panel */
+@media (max-width: 1024px) {
     .sf-designer-props {
         display: none;
     }
 
     .sf-designer-sidebar {
-        width: 200px;
+        width: 180px;
     }
 }
 
 /* Small screens: single panel mode */
-@media (max-width: 960px) {
+@media (max-width: 768px) {
     .sf-designer {
         flex-direction: column;
     }
@@ -68,10 +79,6 @@
 
     .sf-tree-item {
         padding: 8px;
-    }
-
-    .sf-port {
-        r: 6;
     }
 }
 
