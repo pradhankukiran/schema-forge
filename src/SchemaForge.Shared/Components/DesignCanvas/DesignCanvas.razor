@@ -87,6 +87,7 @@
     private string? _dragTableId;
     private double _dragStartX, _dragStartY;
     private double _dragTableStartX, _dragTableStartY;
+    private double _dragOrigX, _dragOrigY;
 
     // Pan state
     private bool _isPanning;
@@ -180,6 +181,8 @@
         var table = SchemaState.Document.Tables.First(t => t.Id == args.TableId);
         _dragTableStartX = table.Position.X;
         _dragTableStartY = table.Position.Y;
+        _dragOrigX = table.Position.X;
+        _dragOrigY = table.Position.Y;
     }
 
     private void StartRelationship(RelationshipDrawEventArgs args)
@@ -245,7 +248,7 @@
             var dy = (e.ClientY - _dragStartY) / _zoom;
             var newX = SnapToGrid(_dragTableStartX + dx);
             var newY = SnapToGrid(_dragTableStartY + dy);
-            SchemaState.Dispatch(new MoveTableAction(_dragTableId, newX, newY));
+            SchemaState.DispatchSilent(new MoveTableAction(_dragTableId, newX, newY));
         }
         else if (_isDrawingRelationship)
         {
@@ -256,8 +259,17 @@
 
     private void OnMouseUp(MouseEventArgs e)
     {
-        if (_isDragging)
+        if (_isDragging && _dragTableId != null)
         {
+            var table = SchemaState.Document.Tables.FirstOrDefault(t => t.Id == _dragTableId);
+            if (table != null && (table.Position.X != _dragOrigX || table.Position.Y != _dragOrigY))
+            {
+                var finalX = table.Position.X;
+                var finalY = table.Position.Y;
+                // Restore original position, then dispatch a single tracked action
+                SchemaState.DispatchSilent(new MoveTableAction(_dragTableId, _dragOrigX, _dragOrigY));
+                SchemaState.Dispatch(new MoveTableAction(_dragTableId, finalX, finalY));
+            }
             _isDragging = false;
             _dragTableId = null;
         }
