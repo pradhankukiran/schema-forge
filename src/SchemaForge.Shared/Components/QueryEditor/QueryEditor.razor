@@ -101,26 +101,21 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await Monaco.InitializeAsync();
+        if (!firstRender) return;
 
-            if (!SqlEngine.IsInitialized)
-                await SqlEngine.InitializeAsync();
+        await Monaco.InitializeAsync();
 
-            Monaco.OnExecuteRequested += OnMonacoExecute;
-            Monaco.OnContentChanged += OnMonacoContentChanged;
-            SchemaState.OnChange += HandleSchemaChanged;
-            QueryState.OnChange += StateHasChanged;
+        if (!SqlEngine.IsInitialized)
+            await SqlEngine.InitializeAsync();
 
-            _initialized = true;
-        }
+        Monaco.OnExecuteRequested += OnMonacoExecute;
+        Monaco.OnContentChanged += OnMonacoContentChanged;
+        SchemaState.OnChange += HandleSchemaChanged;
+        QueryState.OnChange += StateHasChanged;
 
-        if (_initialized)
-        {
-            await EnsureEditorCreated();
-            await UpdateCompletionItems();
-        }
+        _initialized = true;
+        await EnsureEditorCreated();
+        await UpdateCompletionItems();
     }
 
     private async Task EnsureEditorCreated()
